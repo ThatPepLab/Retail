@@ -7,7 +7,7 @@
   <title>Retail Product Catalog</title>
   <link rel="stylesheet" href="styles.css?v=20260808-1">
   <link rel="stylesheet" href="access.css?v=20260807-2">
-  <link rel="stylesheet" href="catalog.css?v=20260809-1">
+  <link rel="stylesheet" href="catalog.css?v=20260809-2">
 </head>
 <body class="site-locked">
   <section id="access-gate" class="access-gate" aria-labelledby="access-title"><form id="access-form" class="access-card"><div class="access-mark" aria-hidden="true">P</div><p class="section-label">RETAIL ACCESS</p><h1 id="access-title">Enter Password</h1><p>Enter the shared password to view the retail catalog.</p><label for="access-password">Password</label><input id="access-password" type="password" autocomplete="current-password" autofocus required><button id="access-button" type="submit">Open Catalog</button><p id="access-error" class="access-error" role="alert"></p></form></section>
@@ -24,7 +24,7 @@
       <div id="suggestions" class="suggestions" hidden></div>
       <label class="field category-field" for="category"><span>Browse by category</span><select id="category"><option value="all">All categories</option></select></label>
       <div id="catalog-groups" class="catalog-groups" aria-live="polite"></div>
-      <section id="selection" class="selection" hidden><p class="section-label">SELECTED PRODUCT</p><h2 id="selected-name"></h2><label class="field strength-field" for="strength"><span>Choose available strength</span><select id="strength"></select></label><div id="prices" class="price-grid" aria-live="polite"></div></section>
+      <section id="selection" class="selection" hidden><p class="section-label">SELECTED PRODUCT</p><h2 id="selected-name"></h2><aside id="product-info" class="product-info" hidden><p id="product-description"></p><button id="download-product-pdf" type="button">Download Product Information PDF</button></aside><label class="field strength-field" for="strength"><span>Choose available strength</span><select id="strength"></select></label><div id="prices" class="price-grid" aria-live="polite"></div></section>
     </section>
 
     <section class="cart-section" aria-labelledby="cart-heading">
@@ -39,6 +39,9 @@
     </section>
   </main>
   <footer>Choose $20 flat-rate shipping or free pickup at checkout.</footer>
-  <script src="app.js?v=20260809-1" defer></script>
+  <script src="https://thatpeplab.github.io/Protocol/protocol-data.js"></script>
+  <script src="https://thatpeplab.github.io/Protocol/protocol-additions.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="app.js?v=20260809-2" defer></script>
 </body>
 </html>
