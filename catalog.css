@@ -5,6 +5,11 @@
 .product-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}
 .product-buttons button{min-height:45px;padding:11px 14px;border:0;background:#fff;color:var(--ink);text-align:left;font-size:13px;font-weight:750;cursor:pointer}
 .product-buttons button:hover,.product-buttons button:focus{background:#fff3e8;color:var(--navy)}
+.product-buttons button.in-stock,.suggestions button.in-stock{background:#fff0df;color:var(--navy);box-shadow:inset 5px 0 0 var(--orange)}
+.stock-chip{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:99px;background:var(--orange);color:#fff;font-size:9px;font-weight:900;letter-spacing:.04em;vertical-align:middle}
+.strength-field select.in-stock{border-color:var(--orange);background:#fff5eb;box-shadow:0 0 0 3px rgba(239,124,34,.18)}
+.price-card.in-stock{border:2px solid var(--orange);background:#fff8f1}
+.stock-banner{margin:-20px -20px 16px;padding:10px 18px;border-radius:12px 12px 0 0;background:var(--orange);color:#fff;font-size:12px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .price-grid{grid-template-columns:minmax(0,430px)}
 .single-cart{grid-template-columns:1fr}
 .single-cart .cart-panel{width:100%}
