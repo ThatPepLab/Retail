@@ -59,9 +59,9 @@ function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
   if(!entry||!window.jspdf?.jsPDF)return;
-  const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=54,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2;
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=54,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2,contentBottom=pageHeight-76;
   let y=58;
-  const addLines=(text,size=10,spacing=14)=>{doc.setFontSize(size);for(const line of doc.splitTextToSize(pdfText(text),contentWidth)){if(y>pageHeight-62){doc.addPage();y=58}doc.text(line,margin,y);y+=spacing}};
+  const addLines=(text,size=10,spacing=14)=>{doc.setFontSize(size);for(const line of doc.splitTextToSize(pdfText(text),contentWidth)){if(y>contentBottom){doc.addPage();y=58}doc.text(line,margin,y);y+=spacing}};
   const addSection=(heading,text)=>{if(!text)return;y+=10;doc.setTextColor(18,43,77);doc.setFont("helvetica","bold");addLines(heading,14,19);doc.setTextColor(18,33,63);doc.setFont("helvetica","normal");addLines(text,10,14)};
   doc.setTextColor(239,124,34);doc.setFont("helvetica","bold");addLines("THAT PEP LAB",11,15);
   doc.setTextColor(18,43,77);addLines(entry.protocolName||entry.name,22,27);
@@ -85,9 +85,12 @@ function downloadSelectedProductPdf(){
   addSection("Storage and Stability",entry.stability);
   addSection("Product Overview",conciseDescription(entry));
   addSection("Overview Reference","Peptides.wiki peptide guides: https://peptides.wiki/peptides/");
-  y+=12;if(y>pageHeight-100){doc.addPage();y=58}doc.setDrawColor(239,124,34);doc.line(margin,y,pageWidth-margin,y);y+=20;
-  doc.setTextColor(18,43,77);doc.setFont("helvetica","bold");addLines("Research ONLY. Not medical advice.",11,16);
-  doc.setTextColor(18,33,63);doc.setFont("helvetica","normal");addLines(entry.disclaimer||"For informational reference only. Product identity, purity, sterility, safety, and suitability are not verified by this guide.",9,13);
+  const pageCount=doc.getNumberOfPages();
+  for(let page=1;page<=pageCount;page++){
+    doc.setPage(page);doc.setDrawColor(239,124,34);doc.setLineWidth(.8);doc.line(margin,pageHeight-57,pageWidth-margin,pageHeight-57);
+    doc.setTextColor(18,43,77);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("Research ONLY. Not medical advice.",margin,pageHeight-41);
+    doc.setTextColor(18,33,63);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text("For research use only. Not medical advice. Not for human or animal consumption.",margin,pageHeight-29);
+  }
   const filename=String(entry.name||"protocol").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");doc.save(`${filename}-${String(state.selectedStrength||"").replace(/\s+/g,"-")}-protocol.pdf`)
 }
 function priceCard(item,quantity){if(!item)return"";return`<article class="price-card">${quantity>0?`<div class="stock-banner">In Stock · ${quantity} vial${quantity===1?"":"s"} available</div>`:""}<p class="strength-copy">${escapeHtml(item.strength)} per vial</p><fieldset><legend>Choose package</legend>${Object.entries(tierInfo).map(([key,tier],index)=>`<label class="tier-choice ${quantity>=tier.vials?"stock-available":""}"><input type="radio" name="package" value="${key}" ${index===0?"checked":""}><span><strong>${tier.label}</strong><small>${tier.discount}${quantity>=tier.vials?" · Available now":""}</small></span><b>${money.format(item.retail[key])}</b></label>`).join("")}</fieldset><button type="button" class="add-button" data-add>Add Selected Package to Cart</button></article>`}
