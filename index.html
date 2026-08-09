@@ -7,12 +7,18 @@
   <title>Retail Product Catalog</title>
   <link rel="stylesheet" href="styles.css?v=20260808-1">
   <link rel="stylesheet" href="access.css?v=20260807-2">
-  <link rel="stylesheet" href="catalog.css?v=20260808-3">
+  <link rel="stylesheet" href="catalog.css?v=20260809-1">
 </head>
 <body class="site-locked">
   <section id="access-gate" class="access-gate" aria-labelledby="access-title"><form id="access-form" class="access-card"><div class="access-mark" aria-hidden="true">P</div><p class="section-label">RETAIL ACCESS</p><h1 id="access-title">Enter Password</h1><p>Enter the shared password to view the retail catalog.</p><label for="access-password">Password</label><input id="access-password" type="password" autocomplete="current-password" autofocus required><button id="access-button" type="submit">Open Catalog</button><p id="access-error" class="access-error" role="alert"></p></form></section>
   <header class="hero"><div class="hero-inner"><div class="brand-mark" aria-hidden="true">P</div><div><p class="eyebrow">RETAIL PRODUCT CATALOG</p><h1>Available Products</h1><p>Browse by category or search for a product, then choose the strength and package size.</p></div></div></header>
   <main class="page">
+    <section id="in-stock-section" class="in-stock-section" aria-labelledby="in-stock-heading" hidden>
+      <div class="in-stock-heading"><div><p class="section-label">AVAILABLE NOW</p><h2 id="in-stock-heading">In Stock Now</h2></div><span id="in-stock-count" class="stock-total"></span></div>
+      <p class="in-stock-copy">Choose an available strength below to see package pricing and add it to your cart.</p>
+      <div id="in-stock-groups" class="in-stock-groups" aria-live="polite"></div>
+    </section>
+
     <section class="finder-card">
       <label class="field" for="search"><span>Search products</span><input id="search" type="search" placeholder="Start typing a product name…" autocomplete="off" aria-controls="suggestions"></label>
       <div id="suggestions" class="suggestions" hidden></div>
@@ -33,6 +39,6 @@
     </section>
   </main>
   <footer>Choose $20 flat-rate shipping or free pickup at checkout.</footer>
-  <script src="app.js?v=20260808-4" defer></script>
+  <script src="app.js?v=20260809-1" defer></script>
 </body>
 </html>
