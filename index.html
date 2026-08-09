@@ -7,7 +7,7 @@
   <title>Retail Product Catalog</title>
   <link rel="stylesheet" href="styles.css?v=20260808-1">
   <link rel="stylesheet" href="access.css?v=20260807-2">
-  <link rel="stylesheet" href="catalog.css?v=20260808-2">
+  <link rel="stylesheet" href="catalog.css?v=20260808-3">
 </head>
 <body class="site-locked">
   <section id="access-gate" class="access-gate" aria-labelledby="access-title"><form id="access-form" class="access-card"><div class="access-mark" aria-hidden="true">P</div><p class="section-label">RETAIL ACCESS</p><h1 id="access-title">Enter Password</h1><p>Enter the shared password to view the retail catalog.</p><label for="access-password">Password</label><input id="access-password" type="password" autocomplete="current-password" autofocus required><button id="access-button" type="submit">Open Catalog</button><p id="access-error" class="access-error" role="alert"></p></form></section>
@@ -25,13 +25,14 @@
       <div class="section-heading"><div><p class="section-label">ORDER REQUEST</p><h2 id="cart-heading">Your Cart</h2></div><span id="cart-count" class="cart-count">0 items</span></div>
       <div class="cart-grid single-cart"><section class="cart-panel"><h3><span class="source-dot"></span>Selected Products</h3><div id="order-cart" class="cart-lines"></div><div id="order-totals" class="cart-totals" hidden></div></section></div>
       <form id="order-form" class="order-form" action="https://formspree.io/f/mzepdzel" method="POST">
+        <h3>Fulfillment</h3><fieldset class="fulfillment-options"><legend>Choose shipping or pickup</legend><label><input id="fulfillment-shipping" type="radio" name="fulfillment" value="Shipping ($20)" checked><span><strong>Shipping</strong><small>Flat $20</small></span></label><label><input id="fulfillment-pickup" type="radio" name="fulfillment" value="Pickup"><span><strong>Pickup</strong><small>Free</small></span></label></fieldset>
         <h3>Customer Information</h3><div class="customer-fields"><label><span>Name</span><input name="customer_name" autocomplete="name" required></label><label><span>Email</span><input type="email" name="email" autocomplete="email" required></label><label><span>Phone</span><input type="tel" name="phone" autocomplete="tel" required></label><label class="notes"><span>Order notes</span><textarea name="notes" rows="3" placeholder="Optional"></textarea></label></div>
         <input type="text" name="_gotcha" class="honeypot" tabindex="-1" autocomplete="off"><input type="hidden" name="order_details" id="order-details-field"><input type="hidden" name="order_total" id="order-total-field">
         <div class="submit-row"><div><span>Estimated total</span><strong id="grand-total">$0</strong></div><button id="submit-order" type="submit" disabled>Submit Order Request</button></div><p class="disclaimer">This submits an order request only. Payment is not collected on this website.</p><p id="form-status" class="form-status" role="status" aria-live="polite"></p>
       </form>
     </section>
   </main>
-  <footer>Each order includes $20 flat-rate shipping.</footer>
-  <script src="app.js?v=20260808-3" defer></script>
+  <footer>Choose $20 flat-rate shipping or free pickup at checkout.</footer>
+  <script src="app.js?v=20260808-4" defer></script>
 </body>
 </html>
