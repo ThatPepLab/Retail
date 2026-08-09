@@ -26,11 +26,13 @@ const categories=[
 function categoryFor(name){return categories.find(category=>category.test.test(name))?.name||"Other"}
 const normalizeName=value=>String(value||"").toLowerCase().replace(/thymosin beta-?4/g,"tb500").replace(/wolverine/g,"").replace(/[^a-z0-9]+/g,"");
 const protocolEntries=Array.isArray(window.PROTOCOL_DATA)?window.PROTOCOL_DATA:[];
+const protocolDisplay=window.PROTOCOL_DISPLAY_DATA||{};
 function protocolFor(name){const key=normalizeName(name);return protocolEntries.find(entry=>normalizeName(entry.name)===key||normalizeName(entry.protocolName)===key)||null}
 const overviewOverrides=new Map([
   ["bpc157tb500","BPC-157 is a synthetic gastric peptide fragment studied mainly in preclinical models for repair-related signaling. TB-500 is related to thymosin beta-4 and is studied for cell migration, actin regulation, angiogenesis, and tissue repair. This blend combines both research compounds in one vial; published human evidence remains limited."],
 ]);
-function conciseDescription(entry){if(!entry?.overview)return"";const override=overviewOverrides.get(normalizeName(entry.name));if(override)return override;const clean=entry.overview.replace(/\s+/g," ").trim(),sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];let result="";for(const sentence of sentences){if(/\b(you|your|yours|i|me|my|we|our|ours)\b/i.test(sentence))continue;if((result+sentence).length>520&&result)break;result+=sentence.trim()+" ";if((result.match(/[.!?]/g)||[]).length>=3)break}return result.trim()||sentences[0].trim()}
+function displayFor(entry){return entry?protocolDisplay[normalizeName(entry.name)]||null:null}
+function conciseDescription(entry){if(!entry?.overview)return"";const shared=displayFor(entry)?.overview;if(shared)return shared;const override=overviewOverrides.get(normalizeName(entry.name));if(override)return override;const clean=entry.overview.replace(/\s+/g," ").trim(),sentences=clean.match(/[^.!?]+[.!?]+/g)||[clean];let result="";for(const sentence of sentences){if(/\b(you|your|yours|i|me|my|we|our|ours)\b/i.test(sentence))continue;if((result+sentence).length>520&&result)break;result+=sentence.trim()+" ";if((result.match(/[.!?]/g)||[]).length>=3)break}return result.trim()||sentences[0].trim()}
 function descriptionAttributes(product){const description=conciseDescription(protocolFor(product.name));return description?` data-description="${escapeHtml(description)}" aria-label="${escapeHtml(product.name)}. ${escapeHtml(description)}"`:""}
 const stockKey=(product,strength)=>`${String(product).trim().toLowerCase()}|${String(strength).trim().toLowerCase()}`;
 function stockQuantity(product,strength){return state.inventory.get(stockKey(product,strength))||0}
@@ -45,13 +47,8 @@ function renderCatalog(){const selected=categorySelect.value,groups=new Map();st
 function renderStrengths(){if(!state.selectedProduct)return;const strengths=productStrengths(state.selectedProduct);strengthSelect.innerHTML=strengths.map(strength=>{const quantity=stockQuantity(state.selectedProduct.name,strength);return`<option value="${escapeHtml(strength)}">${escapeHtml(strength)}${quantity>0?` — ${quantity} available`:""}</option>`}).join("");if(!strengths.includes(state.selectedStrength))state.selectedStrength=strengths[0]||"";strengthSelect.value=state.selectedStrength}
 function chooseProduct(name){const product=state.products.find(item=>item.name===name);if(!product)return;state.selectedProduct=product;search.value=product.name;suggestions.hidden=true;selectedName.textContent=product.name;const entry=protocolFor(product.name),description=conciseDescription(entry);productInfo.hidden=!description;productDescription.textContent=description;downloadProductPdf.hidden=!entry;state.selectedStrength=productStrengths(product)[0]||"";renderStrengths();selection.hidden=false;renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
 function pdfText(value){return String(value||"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,"")}
-function dosageSummary(entry){
-  const schedule=String(entry.schedule||""),lines=schedule.split(/\n+/).map(line=>line.trim()).filter(Boolean),wanted=[];
-  for(const label of ["Dose","Frequency","Timing","Administration","Injection","Duration","Reconstitution"]){const match=lines.find(line=>new RegExp(`^${label}\\s*:`,"i").test(line));if(match)wanted.push(match)}
-  if(!wanted.some(line=>/^Dose\s*:/i.test(line))&&Array.isArray(entry.doses)&&entry.doses.length)wanted.unshift(`Dose options: ${entry.doses.map(dose=>`${dose.value} ${dose.unit}`).join(", ")}`);
-  if(!wanted.some(line=>/^Frequency\s*:/i.test(line))&&entry.frequency)wanted.push(`Frequency: ${entry.frequency}`);
-  return wanted.join("\n")||schedule||"No usual dosage schedule is currently recorded for this product."
-}
+function protocolDoseRecords(entry){return displayFor(entry)?.doses?.length?displayFor(entry).doses:entry.doses||[]}
+function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
   if(!entry||!window.jspdf?.jsPDF)return;
@@ -63,8 +60,20 @@ function downloadSelectedProductPdf(){
   doc.setTextColor(18,43,77);addLines(entry.protocolName||entry.name,22,27);
   doc.setTextColor(85,97,115);doc.setFont("helvetica","normal");addLines(entry.category||categoryFor(entry.name),11,18);
   addLines(`Selected vial strength: ${state.selectedStrength||"Not selected"}`,11,18);
-  addSection("DOSAGE & SCHEDULE",dosageSummary(entry));
-  addSection("Full Usual Protocol",entry.schedule);
+  const display=displayFor(entry),doses=protocolDoseRecords(entry),scheduled=doses.filter(dose=>dose.weekLabel),sourceSchedule=display?.schedule||entry.schedule||"";
+  const frequencyMatch=String(entry.schedule||sourceSchedule).match(/\b(once weekly|twice weekly|three times weekly|once daily|twice daily|three times daily|every other day)\b/i),scheduleFrequency=frequencyMatch?.[1]||entry.frequency||"";
+  const scheduleText=scheduled.length?scheduled.map(dose=>`${dose.weekLabel}: ${doseText(dose)}${scheduleFrequency?` - ${scheduleFrequency}`:""}`).join("\n"):(sourceSchedule||"No usual dosage schedule is currently recorded.");
+  addSection("USUAL DOSAGE SCHEDULE",scheduleText);
+  if(doses.length&&doses.every(dose=>dose.mg>0)){
+    const vialMg=Number.parseFloat(state.selectedStrength),water=[1,1.5,2,2.5,3],rows=[];
+    for(const dose of doses){
+      const draws=water.map(ml=>({ml,units:dose.mg/vialMg*ml*100})),recommended=draws.filter(row=>row.units>0&&row.units<50.000001).sort((a,b)=>a.units-b.units)[0];
+      const comparison=draws.map(row=>`${row.ml}mL=${Number(row.units.toFixed(2))}u`).join(" | ");
+      const coverage=vialMg>=dose.mg?`${Number((vialMg/dose.mg).toFixed(1))} doses per vial`:`selected vial is smaller than this dose`;
+      rows.push(`${dose.weekLabel?`${dose.weekLabel} - `:""}${doseText(dose)}\n${comparison}\nRecommended: ${recommended?`${recommended.ml} mL, ${Number(recommended.units.toFixed(2))} units`:`no listed volume is under 50 units`} | ${coverage}`);
+    }
+    addSection("RECONSTITUTION & UNIT DRAW",rows.join("\n\n"));
+  }
   addSection("Reconstitution and Preparation",entry.reconstitution);
   addSection("Storage and Stability",entry.stability);
   addSection("Product Overview",conciseDescription(entry));
