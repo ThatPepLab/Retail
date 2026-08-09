@@ -1,0 +1,11 @@
+.category-field{display:block;max-width:360px;margin-top:16px}
+.catalog-groups{display:grid;gap:15px;margin-top:22px}
+.catalog-group{border:1px solid var(--line);border-radius:13px;background:#f9fafc;overflow:hidden}
+.catalog-group h2{margin:0;padding:13px 16px;border-bottom:1px solid var(--line);color:var(--navy);font-size:15px}
+.product-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line)}
+.product-buttons button{min-height:45px;padding:11px 14px;border:0;background:#fff;color:var(--ink);text-align:left;font-size:13px;font-weight:750;cursor:pointer}
+.product-buttons button:hover,.product-buttons button:focus{background:#fff3e8;color:var(--navy)}
+.price-grid{grid-template-columns:minmax(0,430px)}
+.single-cart{grid-template-columns:1fr}
+.single-cart .cart-panel{width:100%}
+@media(max-width:650px){.product-buttons{grid-template-columns:1fr}}
