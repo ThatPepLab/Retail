@@ -60,37 +60,74 @@ function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
   if(!entry||!window.jspdf?.jsPDF)return;
-  const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=54,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2,contentBottom=pageHeight-76;
-  let y=58;
-  const addLines=(text,size=10,spacing=14)=>{doc.setFontSize(size);for(const line of doc.splitTextToSize(pdfText(text),contentWidth)){if(y>contentBottom){doc.addPage();y=58}doc.text(line,margin,y);y+=spacing}};
-  const addSection=(heading,text)=>{if(!text)return;y+=10;doc.setTextColor(18,43,77);doc.setFont("helvetica","bold");addLines(heading,14,19);doc.setTextColor(18,33,63);doc.setFont("helvetica","normal");addLines(text,10,14)};
-  doc.setTextColor(239,124,34);doc.setFont("helvetica","bold");addLines("THAT PEP LAB",11,15);
-  doc.setTextColor(18,43,77);addLines(displayProductName(entry.protocolName||entry.name),22,27);
-  doc.setTextColor(85,97,115);doc.setFont("helvetica","normal");addLines(entry.category||categoryFor(entry.name),11,18);
-  addLines(`Selected vial strength: ${state.selectedStrength||"Not selected"}`,11,18);
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=36,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2,contentBottom=pageHeight-66;
+  const navy=[1,30,65],orange=[230,83,0],ink=[22,32,51],muted=[93,107,122],light=[246,248,251],cream=[255,247,237],border=[216,222,232];
+  let y=34;
+  const ensureSpace=height=>{if(y+height>contentBottom){doc.addPage();y=34}};
+  const overview=(()=>{const text=conciseDescription(entry).replace(/\s+/g," ").trim(),sentences=text.match(/[^.!?]+[.!?]+/g)||[text];return sentences.slice(0,2).join(" ").trim().slice(0,360)})();
+  const drawCard=(title,text,options={})=>{
+    if(!text)return;
+    doc.setFont("helvetica","normal");doc.setFontSize(options.size||9.5);
+    const lines=doc.splitTextToSize(pdfText(text),contentWidth-28),lineHeight=options.lineHeight||13,height=31+lines.length*lineHeight+10;
+    ensureSpace(height+10);
+    doc.setFillColor(...(options.fill||light));doc.setDrawColor(...(options.stroke||border));doc.setLineWidth(options.strong?1.6:.8);doc.roundedRect(margin,y,contentWidth,height,9,9,"FD");
+    doc.setFillColor(...(options.accent||navy));doc.roundedRect(margin,y,contentWidth,25,9,9,"F");doc.rect(margin,y+16,contentWidth,9,"F");
+    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(pdfText(title),margin+13,y+17);
+    doc.setTextColor(...ink);doc.setFont("helvetica","normal");doc.setFontSize(options.size||9.5);doc.text(lines,margin+14,y+43,{lineHeightFactor:lineHeight/(options.size||9.5)});
+    y+=height+10;
+  };
+  const drawTable=(title,headers,rows,widths,options={})=>{
+    if(!rows.length)return;
+    const headerH=23,pad=6,fontSize=options.fontSize||8.5,lineH=options.lineHeight||11;
+    const measured=rows.map(row=>Math.max(...row.map((cell,index)=>doc.splitTextToSize(pdfText(cell),widths[index]-pad*2).length))*lineH+10);
+    const cardHeader=26,tableHeader=24,totalHeight=cardHeader+tableHeader+measured.reduce((a,b)=>a+b,0)+1;
+    if(totalHeight<=contentBottom-34)ensureSpace(totalHeight+10);else ensureSpace(cardHeader+tableHeader+measured[0]+10);
+    const drawTitle=()=>{doc.setFillColor(...(options.accent||navy));doc.roundedRect(margin,y,contentWidth,cardHeader,9,9,"F");doc.rect(margin,y+16,contentWidth,10,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(pdfText(title),margin+13,y+18);y+=cardHeader};
+    const drawHeaders=()=>{let x=margin;doc.setFillColor(...cream);doc.rect(margin,y,contentWidth,tableHeader,"F");headers.forEach((head,index)=>{doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.text(pdfText(head),x+pad,y+16);x+=widths[index]});y+=tableHeader};
+    drawTitle();drawHeaders();
+    rows.forEach((row,rowIndex)=>{
+      const rowH=measured[rowIndex];
+      if(y+rowH>contentBottom){doc.addPage();y=34;drawTitle();drawHeaders()}
+      doc.setFillColor(...(rowIndex%2?light:[255,255,255]));doc.setDrawColor(...border);doc.rect(margin,y,contentWidth,rowH,"FD");
+      let x=margin;
+      row.forEach((cell,index)=>{doc.setTextColor(...ink);doc.setFont("helvetica",index===0?"bold":"normal");doc.setFontSize(fontSize);const lines=doc.splitTextToSize(pdfText(cell),widths[index]-pad*2);doc.text(lines,x+pad,y+13,{lineHeightFactor:lineH/fontSize});if(index<row.length-1){doc.setDrawColor(...border);doc.line(x+widths[index],y,x+widths[index],y+rowH)}x+=widths[index]});
+      y+=rowH;
+    });
+    y+=10;
+  };
+
+  doc.setFillColor(...navy);doc.roundedRect(margin,y,contentWidth,76,11,11,"F");doc.setFillColor(...orange);doc.rect(margin,y,7,76,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("PROTOCOL QUICK GUIDE",margin+20,y+19);
+  doc.setFontSize(23);doc.text(pdfText(displayProductName(entry.protocolName||entry.name)),margin+20,y+46);
+  doc.setTextColor(220,227,235);doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.text(pdfText(entry.category||categoryFor(entry.name)),margin+20,y+64);
+  const strengthText=pdfText(state.selectedStrength||"Not selected");doc.setFillColor(...orange);doc.roundedRect(pageWidth-margin-108,y+18,92,40,8,8,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("SELECTED VIAL",pageWidth-margin-62,y+32,{align:"center"});doc.setFontSize(15);doc.text(strengthText,pageWidth-margin-62,y+49,{align:"center"});y+=88;
+
+  drawCard("QUICK OVERVIEW",overview,{fill:[255,255,255]});
   const display=displayFor(entry),doses=protocolDoseRecords(entry),scheduled=doses.filter(dose=>dose.weekLabel),sourceSchedule=display?.schedule||entry.schedule||"";
-  const frequencyMatch=String(entry.schedule||sourceSchedule).match(/\b(once weekly|twice weekly|three times weekly|once daily|twice daily|three times daily|every other day)\b/i),scheduleFrequency=frequencyMatch?.[1]||entry.frequency||"";
-  const scheduleText=scheduled.length?scheduled.map((dose,index)=>`${dose.weekLabel}: ${doseText(dose)}${scheduleFrequency?` - ${scheduleFrequency}`:""}${index===0?' - STARTER DOSE':dose.guidance?` - ${dose.guidance}`:''}`).join("\n"):(sourceSchedule||"No usual dosage schedule is currently recorded.");
-  addSection("USUAL DOSAGE SCHEDULE",scheduleText);
-  if(doses.length&&doses.every(dose=>dose.mg>0)){
-    const vialMg=Number.parseFloat(state.selectedStrength),water=[1,1.5,2,2.5,3],rows=[];
-    for(const dose of doses){
-      const draws=water.map(ml=>({ml,units:dose.mg/vialMg*ml*100})),recommended=draws.filter(row=>row.units>0&&row.units<50.000001).sort((a,b)=>a.units-b.units)[0];
-      const comparison=draws.map(row=>`${row.ml}mL=${Number(row.units.toFixed(2))}u`).join(" | ");
-      const coverage=vialMg>=dose.mg?`${Number((vialMg/dose.mg).toFixed(1))} doses per vial`:`selected vial is smaller than this dose`;
-      rows.push(`${dose.weekLabel?`${dose.weekLabel} - `:""}${doseText(dose)}\n${comparison}\nRecommended: ${recommended?`${recommended.ml} mL, ${Number(recommended.units.toFixed(2))} units`:`no listed volume is under 50 units`} | ${coverage}`);
-    }
-    addSection("RECONSTITUTION & UNIT DRAW",rows.join("\n\n"));
+  const frequencyMatch=String(sourceSchedule||entry.schedule||"").match(/\b(once weekly|twice weekly|three times weekly|once daily|twice daily|three times daily|every other day)\b/i),scheduleFrequency=frequencyMatch?.[1]||entry.frequency||"";
+  let scheduleRows=[];
+  if(scheduled.length){scheduleRows=scheduled.map((dose,index)=>[dose.weekLabel,doseText(dose)+(scheduleFrequency?` - ${scheduleFrequency}`:""),index===0?"STARTER DOSE":dose.guidance?"STAY HERE IF EFFECTIVE":""])}
+  else{
+    const useful=String(sourceSchedule||"No usual dosage schedule is currently recorded.").split(/\n+/).map(line=>line.trim()).filter(line=>line&&!/^evidence:/i.test(line));
+    scheduleRows=useful.slice(0,10).map((line,index)=>{const parts=line.split(/:\s*/,2);return parts.length===2?[parts[0],parts[1],index===0?"":""]:[index===0?"REFERENCE":"",line,""]});
   }
-  addSection("Reconstitution and Preparation",entry.reconstitution);
-  addSection("Storage and Stability",entry.stability);
-  addSection("Product Overview",conciseDescription(entry));
-  addSection("Overview Reference","Peptides.wiki peptide guides: https://peptides.wiki/peptides/");
+  drawTable("USUAL DOSAGE SCHEDULE",["PERIOD / ITEM","DOSE / INSTRUCTION","GUIDANCE"],scheduleRows,[108,198,234],{accent:orange,fontSize:8.2});
+
+  const vialMg=Number.parseFloat(state.selectedStrength),calculable=doses.length&&doses.every(dose=>dose.mg>0)&&vialMg>0,isNasal=/^(semax|selank)$/i.test(String(entry.name||entry.protocolName||""));
+  if(calculable&&isNasal){
+    const sprayRows=doses.map(dose=>{const sprays=dose.mg*50/vialMg,coverage=vialMg/dose.mg;return[doseText(dose),"5 mL saline",`${Number(sprays.toFixed(2))} spray${Math.abs(sprays-1)<.001?"":"s"}`,`${Number(coverage.toFixed(1))} doses` ]});
+    drawTable("NASAL RECONSTITUTION - APPROX. 50 SPRAYS",["DOSE","SALINE","SPRAYS","VIAL COVERAGE"],sprayRows,[145,105,125,165],{accent:orange,fontSize:8.8});
+  }else if(calculable){
+    const water=[1,1.5,2,2.5,3],reconRows=doses.map(dose=>{const draws=water.map(ml=>({ml,units:dose.mg/vialMg*ml*100})),recommended=draws.filter(row=>row.units>0&&row.units<50.000001).sort((a,b)=>a.units-b.units)[0],coverage=vialMg>=dose.mg?`${Number((vialMg/dose.mg).toFixed(1))} doses/vial`:"Vial below dose";return[dose.weekLabel||doseText(dose),...draws.map(row=>`${Number(row.units.toFixed(2))}u`),recommended?`${recommended.ml}mL / ${Number(recommended.units.toFixed(2))}u; ${coverage}`:`No option under 50u; ${coverage}`]});
+    drawTable("RECONSTITUTION & UNIT DRAW",["DOSE / PERIOD","1 mL","1.5 mL","2 mL","2.5 mL","3 mL","RECOMMENDED"],reconRows,[90,48,48,48,48,48,210],{accent:orange,fontSize:7.5,lineHeight:10});
+  }
+  drawCard("PREPARATION",entry.reconstitution,{fill:[255,255,255]});
+  drawCard("STORAGE",entry.stability,{fill:[255,255,255]});
   const pageCount=doc.getNumberOfPages();
   for(let page=1;page<=pageCount;page++){
-    doc.setPage(page);doc.setDrawColor(239,124,34);doc.setLineWidth(.8);doc.line(margin,pageHeight-57,pageWidth-margin,pageHeight-57);
-    doc.setTextColor(18,43,77);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("Research ONLY. Not medical advice.",margin,pageHeight-41);
-    doc.setTextColor(18,33,63);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text("For research use only. Not medical advice. Not for human or animal consumption.",margin,pageHeight-29);
+    doc.setPage(page);doc.setDrawColor(...orange);doc.setLineWidth(1);doc.line(margin,pageHeight-51,pageWidth-margin,pageHeight-51);
+    doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("Research ONLY. Not medical advice.",margin,pageHeight-36);
+    doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text(`Selected vial: ${pdfText(state.selectedStrength||"Not selected")}  |  Page ${page} of ${pageCount}`,pageWidth-margin,pageHeight-36,{align:"right"});
   }
   const filename=String(entry.name||"protocol").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");doc.save(`${filename}-${String(state.selectedStrength||"").replace(/\s+/g,"-")}-protocol.pdf`)
 }
