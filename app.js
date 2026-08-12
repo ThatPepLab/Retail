@@ -10,11 +10,11 @@ const $=selector=>document.querySelector(selector);
 const search=$("#search"),suggestions=$("#suggestions"),categorySelect=$("#category"),catalogGroups=$("#catalog-groups"),inStockSection=$("#in-stock-section"),inStockGroups=$("#in-stock-groups"),inStockCount=$("#in-stock-count"),selection=$("#selection"),selectedName=$("#selected-name"),productInfo=$("#product-info"),productEducation=$("#product-education"),downloadProductPdf=$("#download-product-pdf"),strengthSelect=$("#strength"),prices=$("#prices"),cartCount=$("#cart-count"),orderForm=$("#order-form"),grandTotal=$("#grand-total"),submitOrder=$("#submit-order"),formStatus=$("#form-status"),cartContainer=$("#order-cart"),cartTotals=$("#order-totals");
 const money=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});
 const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const displayProductName=name=>{const value=String(name||"").trim();if(/^retatrutide$/i.test(value))return"Triple Agonist (GLP-3)";if(/^tirzepatide$/i.test(value))return"Tirzepatide (GLP-2)";if(/^semaglutide$/i.test(value))return"Semaglutide (GLP-1)";return value};
+const displayProductName=name=>{const value=String(name||"").trim();if(/^glp-?3rt$/i.test(value))return"GLP-3RT";if(/^tirzepatide$/i.test(value))return"Tirzepatide (GLP-2)";if(/^semaglutide$/i.test(value))return"Semaglutide (GLP-1)";return value};
 const strengthNumber=value=>Number.parseFloat(value)||0;
 const tierInfo={one:{vials:1,label:"1 vial",discount:"Regular MSRP"},three:{vials:3,label:"3 vials",discount:"10% off"},five:{vials:5,label:"5 vials",discount:"15% off"},ten:{vials:10,label:"10 vials",discount:"20% off"}};
 const categories=[
-  {name:"Weight Loss",test:/semaglutide|tirzepatide|trizepatide|retatrutide|cagrilintide|cagilintide|mazdutide|survodutide|eloralintide|adipotide|aod-?9604|hgh fragment|lemon bottle|lipo lab|lipo-[bc]|lipo-c|fat blaster|5-amino/i},
+  {name:"Weight Loss",test:/semaglutide|tirzepatide|trizepatide|glp-?3rt|cagrilintide|cagilintide|mazdutide|survodutide|eloralintide|adipotide|aod-?9604|hgh fragment|lemon bottle|lipo lab|lipo-[bc]|lipo-c|fat blaster|5-amino/i},
   {name:"Energy & Metabolic",test:/mots|ss-?31|nad\+|aicar|slu-?pp|l-carnitine|lc120|lc216|mic\b|superhuman|humanin|vitamin b12/i},
   {name:"Recovery & Repair",test:/bpc|tb500|tb-?500|glow|klow|kpv|ll-?37|ara-?290|cartalax|bronchogen|cardiogen|vesugen|lysine-proline-valine/i},
   {name:"Growth & Performance",test:/hgh|cjc|ghrp|ipamorelin|tesamorelin|sermorelin|igf|mgf|follistatin|ace-?031|gdf-?8|mk677|epo\b/i},
