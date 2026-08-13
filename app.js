@@ -60,40 +60,16 @@ function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
   if(!entry||!window.jspdf?.jsPDF)return;
-  const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=36,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2,contentBottom=pageHeight-66;
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=36,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2;
   const navy=[1,30,65],orange=[230,83,0],ink=[22,32,51],muted=[93,107,122],light=[246,248,251],cream=[255,247,237],border=[216,222,232];
   let y=34;
-  const ensureSpace=height=>{if(y+height>contentBottom){doc.addPage();y=34}};
   const overview=(()=>{const text=conciseDescription(entry).replace(/\s+/g," ").trim(),sentences=text.match(/[^.!?]+[.!?]+/g)||[text];return sentences.slice(0,2).join(" ").trim().slice(0,360)})();
-  const drawCard=(title,text,options={})=>{
-    if(!text)return;
-    doc.setFont("helvetica","normal");doc.setFontSize(options.size||9.5);
-    const lines=doc.splitTextToSize(pdfText(text),contentWidth-28),lineHeight=options.lineHeight||13,height=31+lines.length*lineHeight+10;
-    ensureSpace(height+10);
-    doc.setFillColor(...(options.fill||light));doc.setDrawColor(...(options.stroke||border));doc.setLineWidth(options.strong?1.6:.8);doc.roundedRect(margin,y,contentWidth,height,9,9,"FD");
-    doc.setFillColor(...(options.accent||navy));doc.roundedRect(margin,y,contentWidth,25,9,9,"F");doc.rect(margin,y+16,contentWidth,9,"F");
-    doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(pdfText(title),margin+13,y+17);
-    doc.setTextColor(...ink);doc.setFont("helvetica","normal");doc.setFontSize(options.size||9.5);doc.text(lines,margin+14,y+43,{lineHeightFactor:lineHeight/(options.size||9.5)});
-    y+=height+10;
-  };
-  const drawTable=(title,headers,rows,widths,options={})=>{
-    if(!rows.length)return;
-    const headerH=23,pad=6,fontSize=options.fontSize||8.5,lineH=options.lineHeight||11;
-    const measured=rows.map(row=>Math.max(...row.map((cell,index)=>doc.splitTextToSize(pdfText(cell),widths[index]-pad*2).length))*lineH+10);
-    const cardHeader=26,tableHeader=24,totalHeight=cardHeader+tableHeader+measured.reduce((a,b)=>a+b,0)+1;
-    if(totalHeight<=contentBottom-34)ensureSpace(totalHeight+10);else ensureSpace(cardHeader+tableHeader+measured[0]+10);
-    const drawTitle=()=>{doc.setFillColor(...(options.accent||navy));doc.roundedRect(margin,y,contentWidth,cardHeader,9,9,"F");doc.rect(margin,y+16,contentWidth,10,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(pdfText(title),margin+13,y+18);y+=cardHeader};
-    const drawHeaders=()=>{let x=margin;doc.setFillColor(...cream);doc.rect(margin,y,contentWidth,tableHeader,"F");headers.forEach((head,index)=>{doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.text(pdfText(head),x+pad,y+16);x+=widths[index]});y+=tableHeader};
-    drawTitle();drawHeaders();
-    rows.forEach((row,rowIndex)=>{
-      const rowH=measured[rowIndex];
-      if(y+rowH>contentBottom){doc.addPage();y=34;drawTitle();drawHeaders()}
-      doc.setFillColor(...(rowIndex%2?light:[255,255,255]));doc.setDrawColor(...border);doc.rect(margin,y,contentWidth,rowH,"FD");
-      let x=margin;
-      row.forEach((cell,index)=>{doc.setTextColor(...ink);doc.setFont("helvetica",index===0?"bold":"normal");doc.setFontSize(fontSize);const lines=doc.splitTextToSize(pdfText(cell),widths[index]-pad*2);doc.text(lines,x+pad,y+13,{lineHeightFactor:lineH/fontSize});if(index<row.length-1){doc.setDrawColor(...border);doc.line(x+widths[index],y,x+widths[index],y+rowH)}x+=widths[index]});
-      y+=rowH;
-    });
-    y+=10;
+  const limitedLines=(text,width,maxLines=2)=>{const lines=doc.splitTextToSize(pdfText(text),width);if(lines.length<=maxLines)return lines;const kept=lines.slice(0,maxLines);kept[maxLines-1]=kept[maxLines-1].replace(/\s+\S*$/,"")+"...";return kept};
+  const drawSectionTitle=(title,top,color=navy)=>{doc.setFillColor(...color);doc.roundedRect(margin,top,contentWidth,25,8,8,"F");doc.rect(margin,top+16,contentWidth,9,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(pdfText(title),margin+13,top+17)};
+  const drawSchedule=(rows)=>{
+    const top=y,widths=[108,198,234],rowH=30;drawSectionTitle("USUAL DOSAGE SCHEDULE",top,orange);y+=25;
+    let x=margin;doc.setFillColor(...cream);doc.rect(margin,y,contentWidth,22,"F");["PERIOD / ITEM","DOSE / INSTRUCTION","GUIDANCE"].forEach((head,index)=>{doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(7.4);doc.text(head,x+6,y+15);x+=widths[index]});y+=22;
+    rows.slice(0,6).forEach((row,rowIndex)=>{doc.setFillColor(...(rowIndex%2?light:[255,255,255]));doc.setDrawColor(...border);doc.rect(margin,y,contentWidth,rowH,"FD");let cellX=margin;row.forEach((cell,index)=>{doc.setTextColor(...ink);doc.setFont("helvetica",index===0?"bold":"normal");doc.setFontSize(8);doc.text(limitedLines(cell,widths[index]-12,2),cellX+6,y+12,{lineHeightFactor:1.18});if(index<2)doc.line(cellX+widths[index],y,cellX+widths[index],y+rowH);cellX+=widths[index]});y+=rowH});
   };
 
   doc.setFillColor(...navy);doc.roundedRect(margin,y,contentWidth,76,11,11,"F");doc.setFillColor(...orange);doc.rect(margin,y,7,76,"F");
@@ -102,33 +78,29 @@ function downloadSelectedProductPdf(){
   doc.setTextColor(220,227,235);doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.text(pdfText(entry.category||categoryFor(entry.name)),margin+20,y+64);
   const strengthText=pdfText(state.selectedStrength||"Not selected");doc.setFillColor(...orange);doc.roundedRect(pageWidth-margin-108,y+18,92,40,8,8,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("SELECTED VIAL",pageWidth-margin-62,y+32,{align:"center"});doc.setFontSize(15);doc.text(strengthText,pageWidth-margin-62,y+49,{align:"center"});y+=88;
 
-  drawCard("QUICK OVERVIEW",overview,{fill:[255,255,255]});
+  doc.setFillColor(255,255,255);doc.setDrawColor(...border);doc.roundedRect(margin,y,contentWidth,72,8,8,"FD");drawSectionTitle("QUICK OVERVIEW",y);doc.setTextColor(...ink);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(limitedLines(overview,contentWidth-28,3),margin+14,y+42,{lineHeightFactor:1.25});y+=82;
   const display=displayFor(entry),doses=protocolDoseRecords(entry),scheduled=doses.filter(dose=>dose.weekLabel),sourceSchedule=display?.schedule||entry.schedule||"";
   const frequencyMatch=String(sourceSchedule||entry.schedule||"").match(/\b(once weekly|twice weekly|three times weekly|once daily|twice daily|three times daily|every other day)\b/i),scheduleFrequency=frequencyMatch?.[1]||entry.frequency||"";
   let scheduleRows=[];
   if(scheduled.length){scheduleRows=scheduled.map((dose,index)=>[dose.weekLabel,doseText(dose)+(scheduleFrequency?` - ${scheduleFrequency}`:""),index===0?"STARTER DOSE":dose.guidance?"STAY HERE IF EFFECTIVE":""])}
   else{
     const useful=String(sourceSchedule||"No usual dosage schedule is currently recorded.").split(/\n+/).map(line=>line.trim()).filter(line=>line&&!/^evidence:/i.test(line));
-    scheduleRows=useful.slice(0,10).map((line,index)=>{const parts=line.split(/:\s*/,2);return parts.length===2?[parts[0],parts[1],index===0?"":""]:[index===0?"REFERENCE":"",line,""]});
+    scheduleRows=useful.slice(0,6).map((line,index)=>{const parts=line.split(/:\s*/,2);return parts.length===2?[parts[0],parts[1],index===0?"USUAL / STARTER":""]:[index===0?"REFERENCE":"",line,""]});
   }
-  drawTable("USUAL DOSAGE SCHEDULE",["PERIOD / ITEM","DOSE / INSTRUCTION","GUIDANCE"],scheduleRows,[108,198,234],{accent:orange,fontSize:8.2});
+  drawSchedule(scheduleRows);
 
-  const vialMg=Number.parseFloat(state.selectedStrength),calculable=doses.length&&doses.every(dose=>dose.mg>0)&&vialMg>0,isNasal=/^(semax|selank)$/i.test(String(entry.name||entry.protocolName||""));
+  const prepTop=Math.min(438,y+10);doc.setFillColor(255,255,255);doc.setDrawColor(...border);doc.roundedRect(margin,prepTop,contentWidth,72,8,8,"FD");drawSectionTitle("PREPARATION & STORAGE",prepTop);doc.setTextColor(...ink);doc.setFont("helvetica","normal");doc.setFontSize(8);const prep=`Preparation: ${entry.reconstitution||"Follow product-specific preparation instructions."} Storage: ${entry.stability||"Follow labeled storage instructions."}`;doc.text(limitedLines(prep,contentWidth-28,3),margin+14,prepTop+40,{lineHeightFactor:1.2});
+
+  const vialMg=Number.parseFloat(state.selectedStrength),dose=doses.find(item=>item.mg>0),calculable=display?.calculable!==false&&entry.calculable!==false&&dose?.mg>0&&vialMg>0,isNasal=/^(semax|selank)$/i.test(String(entry.name||entry.protocolName||""));
+  const recTop=522,recHeight=188;doc.setFillColor(...navy);doc.setDrawColor(...orange);doc.setLineWidth(2);doc.roundedRect(margin,recTop,contentWidth,recHeight,12,12,"FD");doc.setFillColor(...orange);doc.roundedRect(margin,recTop,contentWidth,30,12,12,"F");doc.rect(margin,recTop+18,contentWidth,12,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(isNasal?"RECOMMENDED NASAL PREPARATION":"RECOMMENDED RECONSTITUTION & UNIT DRAW",pageWidth/2,recTop+20,{align:"center"});
   if(calculable&&isNasal){
-    const sprayRows=doses.map(dose=>{const sprays=dose.mg*50/vialMg,coverage=vialMg/dose.mg;return[doseText(dose),"5 mL saline",`${Number(sprays.toFixed(2))} spray${Math.abs(sprays-1)<.001?"":"s"}`,`${Number(coverage.toFixed(1))} doses` ]});
-    drawTable("NASAL RECONSTITUTION - APPROX. 50 SPRAYS",["DOSE","SALINE","SPRAYS","VIAL COVERAGE"],sprayRows,[145,105,125,165],{accent:orange,fontSize:8.8});
+    const sprays=dose.mg*50/vialMg,coverage=vialMg/dose.mg;doc.setFontSize(10);doc.text(`5 mL STERILE SALINE  |  ${pdfText(doseText(dose))} USUAL / STARTER DOSE`,pageWidth/2,recTop+53,{align:"center"});doc.setTextColor(...orange);doc.setFontSize(42);doc.text(Number(sprays.toFixed(2)).toString(),pageWidth/2,recTop+105,{align:"center"});doc.setTextColor(255,255,255);doc.setFontSize(12);doc.text(`SPRAY${Math.abs(sprays-1)<.001?"":"S"} PER DOSE`,pageWidth/2,recTop+126,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(`Approximately ${Number(coverage.toFixed(1))} doses per vial - based on a 5 mL sprayer delivering about 50 sprays`,pageWidth/2,recTop+151,{align:"center"});
   }else if(calculable){
-    const water=[1,1.5,2,2.5,3],reconRows=doses.map(dose=>{const draws=water.map(ml=>({ml,units:dose.mg/vialMg*ml*100})),recommended=draws.filter(row=>row.units>0&&row.units<50.000001).sort((a,b)=>a.units-b.units)[0],coverage=vialMg>=dose.mg?`${Number((vialMg/dose.mg).toFixed(1))} doses/vial`:"Vial below dose";return[dose.weekLabel||doseText(dose),...draws.map(row=>`${Number(row.units.toFixed(2))}u`),recommended?`${recommended.ml}mL / ${Number(recommended.units.toFixed(2))}u; ${coverage}`:`No option under 50u; ${coverage}`]});
-    drawTable("RECONSTITUTION & UNIT DRAW",["DOSE / PERIOD","1 mL","1.5 mL","2 mL","2.5 mL","3 mL","RECOMMENDED"],reconRows,[90,48,48,48,48,48,210],{accent:orange,fontSize:7.5,lineHeight:10});
-  }
-  drawCard("PREPARATION",entry.reconstitution,{fill:[255,255,255]});
-  drawCard("STORAGE",entry.stability,{fill:[255,255,255]});
-  const pageCount=doc.getNumberOfPages();
-  for(let page=1;page<=pageCount;page++){
-    doc.setPage(page);doc.setDrawColor(...orange);doc.setLineWidth(1);doc.line(margin,pageHeight-51,pageWidth-margin,pageHeight-51);
-    doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("Research ONLY. Not medical advice.",margin,pageHeight-36);
-    doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text(`Selected vial: ${pdfText(state.selectedStrength||"Not selected")}  |  Page ${page} of ${pageCount}`,pageWidth-margin,pageHeight-36,{align:"right"});
-  }
+    const water=[1,1.5,2,2.5,3],recommended=water.map(ml=>({ml,units:dose.mg/vialMg*ml*100})).filter(row=>row.units>0&&row.units<50.000001).sort((a,b)=>a.units-b.units||a.ml-b.ml)[0],coverage=vialMg/dose.mg;
+    if(recommended){doc.setFontSize(10);doc.text(`${recommended.ml} mL BAC WATER  |  ${pdfText(doseText(dose))} USUAL / STARTER DOSE`,pageWidth/2,recTop+53,{align:"center"});doc.setTextColor(...orange);doc.setFontSize(46);doc.text(Number(recommended.units.toFixed(2)).toString(),pageWidth/2,recTop+108,{align:"center"});doc.setTextColor(255,255,255);doc.setFontSize(12);doc.text("UNITS ON A U-100 SYRINGE",pageWidth/2,recTop+130,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(`${Number(coverage.toFixed(1))} doses per vial - recommendation uses the lowest draw under 50 units`,pageWidth/2,recTop+154,{align:"center"})}
+    else{doc.setFontSize(18);doc.text("NO LISTED VOLUME KEEPS THIS DOSE UNDER 50 UNITS",pageWidth/2,recTop+94,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text("Review the selected vial strength and usual dose before calculating a draw.",pageWidth/2,recTop+121,{align:"center"})}
+  }else{doc.setFontSize(20);doc.text("UNIT CALCULATION NOT AVAILABLE",pageWidth/2,recTop+94,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text("No generalized dose or reconstitution calculation is provided for this item.",pageWidth/2,recTop+121,{align:"center"})}
+  doc.setDrawColor(...orange);doc.setLineWidth(1);doc.line(margin,pageHeight-51,pageWidth-margin,pageHeight-51);doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("Research ONLY. Not medical advice.",margin,pageHeight-36);doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text(`Selected vial: ${pdfText(state.selectedStrength||"Not selected")}  |  One-page quick guide`,pageWidth-margin,pageHeight-36,{align:"right"});
   const filename=String(entry.name||"protocol").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");doc.save(`${filename}-${String(state.selectedStrength||"").replace(/\s+/g,"-")}-protocol.pdf`)
 }
 function priceCard(item,quantity){if(!item)return"";return`<article class="price-card">${quantity>0?`<div class="stock-banner">In Stock · ${quantity} vial${quantity===1?"":"s"} available</div>`:""}<p class="strength-copy">${escapeHtml(item.strength)} per vial</p><fieldset><legend>Choose package</legend>${Object.entries(tierInfo).map(([key,tier],index)=>`<label class="tier-choice ${quantity>=tier.vials?"stock-available":""}"><input type="radio" name="package" value="${key}" ${index===0?"checked":""}><span><strong>${tier.label}</strong><small>${tier.discount}${quantity>=tier.vials?" · Available now":""}</small></span><b>${money.format(item.retail[key])}</b></label>`).join("")}</fieldset><button type="button" class="add-button" data-add>Add Selected Package to Cart</button></article>`}
