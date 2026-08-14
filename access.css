@@ -11,3 +11,5 @@
 .access-card button:disabled{opacity:.65}
 .access-error{min-height:21px;margin:10px 0 0;color:#a33;font-weight:750}
 .site-locked>header,.site-locked>main,.site-locked>footer{display:none!important}
+
+.password-copy{margin-top:10px;border:1px solid #dfe4eb;border-radius:10px;background:#f7f9fc;overflow:hidden}.password-copy summary{padding:11px 13px;color:#102d59;font-size:12px;font-weight:850;cursor:pointer;list-style-position:inside}.password-copy[open] summary{border-bottom:1px solid #dfe4eb}.password-copy-row{display:grid;grid-template-columns:1fr 92px;gap:9px;align-items:center;padding:12px 13px 5px}.masked-password{display:flex;align-items:center;min-height:43px;padding:0 12px;border:2px solid #cfd7e2;border-radius:8px;background:#fff;color:#081b36;font-size:20px;font-weight:900;letter-spacing:.18em}.access-card .password-copy-row button{width:auto;margin:0;padding:11px 12px;background:#102d59;color:#fff}.password-copy #copy-password-status{min-height:18px;margin:4px 13px 10px;color:#13795b;font-size:11px;font-weight:800}

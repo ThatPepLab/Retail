@@ -6,11 +6,11 @@
   <meta name="description" content="Search products, choose a vial package, and submit an order request.">
   <title>Retail Product Catalog</title>
   <link rel="stylesheet" href="styles.css?v=20260808-1">
-  <link rel="stylesheet" href="access.css?v=20260807-2">
+  <link rel="stylesheet" href="access.css?v=20260814-1">
   <link rel="stylesheet" href="catalog.css?v=20260812-3">
 </head>
 <body class="site-locked">
-  <section id="access-gate" class="access-gate" aria-labelledby="access-title"><form id="access-form" class="access-card"><div class="access-mark" aria-hidden="true">P</div><p class="section-label">RETAIL ACCESS</p><h1 id="access-title">Enter Password</h1><p>Enter the shared password to view the retail catalog.</p><label for="access-password">Password</label><input id="access-password" type="password" autocomplete="current-password" autofocus required><button id="access-button" type="submit">Open Catalog</button><p id="access-error" class="access-error" role="alert"></p></form></section>
+  <section id="access-gate" class="access-gate" aria-labelledby="access-title"><form id="access-form" class="access-card"><div class="access-mark" aria-hidden="true">P</div><p class="section-label">RETAIL ACCESS</p><h1 id="access-title">Enter Password</h1><p>Enter the shared password to view the retail catalog.</p><label for="access-password">Password</label><input id="access-password" type="password" autocomplete="current-password" autofocus required><button id="access-button" type="submit">Open Catalog</button><p id="access-error" class="access-error" role="alert"></p><details class="password-copy"><summary>Copy access password</summary><div class="password-copy-row"><span class="masked-password" aria-label="Password hidden">•••••</span><button id="copy-password" type="button">Copy</button></div><p id="copy-password-status" role="status" aria-live="polite"></p></details></form></section>
   <header class="hero"><div class="hero-inner"><div class="brand-mark" aria-hidden="true">P</div><div><p class="eyebrow">RETAIL PRODUCT CATALOG</p><h1>Available Products</h1><p>Browse by category or search for a product, then choose the strength and package size.</p></div></div></header>
   <main class="page">
     <section id="in-stock-section" class="in-stock-section" aria-labelledby="in-stock-heading" hidden>
@@ -43,6 +43,6 @@
   <script src="https://thatpeplab.github.io/Protocol/protocol-additions.js"></script>
   <script src="https://thatpeplab.github.io/Protocol/protocol-display-data.js?v=20260812-1"></script>
   <script src="vendor/jspdf.umd.min.js"></script>
-  <script src="app.js?v=20260812-3" defer></script>
+  <script src="app.js?v=20260814-1" defer></script>
 </body>
 </html>

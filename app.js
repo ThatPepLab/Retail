@@ -1,9 +1,11 @@
 const accessGate=document.querySelector("#access-gate"),accessForm=document.querySelector("#access-form"),accessPassword=document.querySelector("#access-password"),accessError=document.querySelector("#access-error"),accessButton=document.querySelector("#access-button");
+const copyPasswordButton=document.querySelector("#copy-password"),copyPasswordStatus=document.querySelector("#copy-password-status");
 const accessHash="8fa4abdde72800faaa6a93ca9d958427bc9584fcfdfaa77a911eea752258a16f";
 async function accessDigest(value){const bytes=new TextEncoder().encode(value),hash=await crypto.subtle.digest("SHA-256",bytes);return[...new Uint8Array(hash)].map(byte=>byte.toString(16).padStart(2,"0")).join("")}
 function unlockSite(){document.body.classList.remove("site-locked");accessGate.hidden=true;accessPassword.value=""}
 if(sessionStorage.getItem("tplRetailAccess")==="granted")unlockSite();
 accessForm.addEventListener("submit",async event=>{event.preventDefault();accessError.textContent="";accessButton.disabled=true;if(await accessDigest(accessPassword.value)===accessHash){sessionStorage.setItem("tplRetailAccess","granted");unlockSite()}else{accessError.textContent="Incorrect password.";accessPassword.select()}accessButton.disabled=false});
+copyPasswordButton.addEventListener("click",async()=>{const password=atob("VFBMUk8=");try{await navigator.clipboard.writeText(password)}catch{const helper=document.createElement("textarea");helper.value=password;helper.setAttribute("readonly","");helper.style.position="fixed";helper.style.opacity="0";document.body.append(helper);helper.select();document.execCommand("copy");helper.remove()}copyPasswordStatus.textContent="Copied — paste it into the Password field above.";copyPasswordButton.textContent="Copied";setTimeout(()=>{copyPasswordStatus.textContent="";copyPasswordButton.textContent="Copy"},3000)});
 
 const state={products:[],selectedProduct:null,selectedStrength:"",protocolMode:"starter",selectedProtocolDose:0,cart:[],inventory:new Map()};
 const $=selector=>document.querySelector(selector);
