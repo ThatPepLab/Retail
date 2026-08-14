@@ -46,9 +46,10 @@ function wikiUrl(entry){
 }
 const stockKey=(product,strength)=>`${String(product).trim().toLowerCase()}|${String(strength).trim().toLowerCase()}`;
 function stockQuantity(product,strength){return state.inventory.get(stockKey(product,strength))||0}
+function productItems(product){if(Array.isArray(product?.items))return product.items;return[...(Array.isArray(product?.china)?product.china:[]),...(Array.isArray(product?.usa)?product.usa:[])]}
 function productInStock(product){return productStrengths(product).some(strength=>stockQuantity(product.name,strength)>0)}
-function productStrengths(product){return[...new Set([...product.china,...product.usa].map(item=>item.strength))].sort((a,b)=>strengthNumber(a)-strengthNumber(b))}
-function highestPriceItem(product,strength){const candidates=[...product.china,...product.usa].filter(item=>item.strength===strength);if(!candidates.length)return null;return{strength,retail:Object.fromEntries(Object.keys(tierInfo).map(key=>[key,Math.max(...candidates.map(item=>Number(item.retail?.[key])||0))]))}}
+function productStrengths(product){return[...new Set(productItems(product).map(item=>item.strength).filter(Boolean))].sort((a,b)=>strengthNumber(a)-strengthNumber(b))}
+function highestPriceItem(product,strength){const candidates=productItems(product).filter(item=>item.strength===strength);if(!candidates.length)return null;return{strength,retail:Object.fromEntries(Object.keys(tierInfo).map(key=>[key,Math.max(...candidates.map(item=>Number(item.retail?.[key])||0))]))}}
 function matchingProducts(){const query=search.value.trim().toLowerCase();return query?state.products.filter(product=>product.name.toLowerCase().includes(query)||displayProductName(product.name).toLowerCase().includes(query)).slice(0,12):[]}
 function stockChip(product){return productInStock(product)?'<span class="stock-chip">IN STOCK</span>':""}
 function renderSuggestions(){const matches=matchingProducts();suggestions.hidden=!matches.length;suggestions.innerHTML=matches.map(product=>`<button type="button" class="${productInStock(product)?"in-stock":""}" data-product="${escapeHtml(product.name)}">${escapeHtml(displayProductName(product.name))}${stockChip(product)}</button>`).join("")}
