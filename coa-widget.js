@@ -52,27 +52,26 @@
     const attrs = ' data-coa-product="' + esc(product) + '" data-coa-strength="' + esc(strength) + '" data-coa-vendor="' + esc(vendor || "") + '"';
     if (result.completed.length) {
       const newerPending = result.pending.some((pending) => dateValue(pending.dateSent) > dateValue(result.completed[0].analysisDate));
-      const vendors = new Set(result.completed.map((record) => vendorKey(record.vendor))).size;
-      const label = vendor ? "COA · " + prettyDate(result.completed[0].analysisDate) : "COA Available" + (vendors > 1 ? " · " + vendors + " vendors" : "");
+      const label = "Latest COA · " + prettyDate(result.completed[0].analysisDate);
       return '<button type="button" class="coa-status coa-complete"' + attrs + ">" + esc(label) + (newerPending ? "<span>Newer test pending</span>" : "") + "</button>";
     }
     return '<button type="button" class="coa-status coa-pending"' + attrs + ">COA Pending</button>";
   };
   function ensureModal() {
     if (document.querySelector("#coa-directory-modal")) return;
-    document.body.insertAdjacentHTML("beforeend", '<dialog id="coa-directory-modal" class="coa-modal"><div class="coa-modal-head"><div><p>PUBLIC TESTING RECORDS</p><h2 id="coa-modal-title">Certificate of Analysis</h2></div><button type="button" class="coa-modal-close" aria-label="Close COA details">×</button></div><div id="coa-modal-body"></div><p class="coa-source-note">Testing records are linked from the <a href="https://coa.reta-unfiltered.com/#directory" target="_blank" rel="noopener noreferrer">RU Inner Circle COA Library</a>. Confirm the vendor, product, vial size, date, and verification page.</p></dialog>');
+    document.body.insertAdjacentHTML("beforeend", '<dialog id="coa-directory-modal" class="coa-modal"><div class="coa-modal-head"><div><p>PRODUCT TESTING RECORD</p><h2 id="coa-modal-title">Certificate of Analysis</h2></div><button type="button" class="coa-modal-close" aria-label="Close COA details">×</button></div><div id="coa-modal-body"></div></dialog>');
   }
   function open(product, strength, vendor) {
     ensureModal();
     const result = matches(product, strength, vendor);
     const modal = document.querySelector("#coa-directory-modal");
     document.querySelector("#coa-modal-title").textContent = product + " · " + strength;
-    const completeCards = result.completed.map((record) => {
+    const completeCards = result.completed.slice(0, 1).map((record) => {
       const report = record.reportUrl ? '<a class="coa-report-link" href="' + esc(record.reportUrl) + '" target="_blank" rel="noopener noreferrer">Open Official COA</a>' : '<span class="coa-unavailable">Verification link not listed</span>';
       const preview = record.previewUrl ? '<details class="coa-report-preview"><summary>Preview report</summary><iframe title="COA preview" src="' + esc(record.previewUrl) + '" loading="lazy"></iframe></details>' : "";
-      return '<article class="coa-record"><div class="coa-record-heading"><strong>' + esc(record.vendor) + "</strong><span>Completed " + esc(prettyDate(record.analysisDate)) + "</span></div><dl><div><dt>Testing lab</dt><dd>" + esc(record.lab || "Not listed") + "</dd></div><div><dt>Purity</dt><dd>" + esc(record.purity || "Not listed") + "</dd></div><div><dt>Net content</dt><dd>" + esc(record.netContent || "Not listed") + "</dd></div></dl>" + report + preview + "</article>";
+      return '<article class="coa-record"><div class="coa-record-heading"><strong>Latest COA</strong><span>Completed " + esc(prettyDate(record.analysisDate)) + "</span></div><dl><div><dt>Testing lab</dt><dd>" + esc(record.lab || "Not listed") + "</dd></div><div><dt>Purity</dt><dd>" + esc(record.purity || "Not listed") + "</dd></div><div><dt>Net content</dt><dd>" + esc(record.netContent || "Not listed") + "</dd></div></dl>" + report + preview + "</article>";
     }).join("");
-    const pendingCards = result.pending.map((record) => '<article class="coa-record coa-record-pending"><div class="coa-record-heading"><strong>' + esc(record.vendor) + "</strong><span>COA Pending</span></div><dl><div><dt>Expected</dt><dd>" + esc(prettyDate(record.expectedDate)) + "</dd></div></dl></article>").join("");
+    const pendingCards = result.completed.length ? "" : result.pending.slice(0, 1).map((record) => '<article class="coa-record coa-record-pending"><div class="coa-record-heading"><strong>Latest status</strong><span>COA Pending</span></div><dl><div><dt>Expected</dt><dd>" + esc(prettyDate(record.expectedDate)) + "</dd></div></dl></article>").join("");
     document.querySelector("#coa-modal-body").innerHTML = completeCards + pendingCards || '<p class="coa-empty">No matching completed or pending test is listed.</p>';
     modal.showModal();
   }
