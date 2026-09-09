@@ -75,13 +75,14 @@ function pdfText(value){return String(value||"").replace(/[–—]/g,"-").replac
 function protocolDoseRecords(entry){return displayFor(entry)?.doses?.length?displayFor(entry).doses:entry.doses||[]}
 function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
 function availableProtocolDoses(entry){return protocolDoseRecords(entry).filter(dose=>Number(dose.mg)>0)}
-function selectedPdfDose(entry){const doses=availableProtocolDoses(entry);return doses[state.protocolMode==="returning"?state.selectedProtocolDose:0]||doses[0]}
+function selectedPdfDose(entry){const doses=availableProtocolDoses(entry),selectable=state.protocolMode==="returning"?doses.slice(1):doses;return selectable[state.protocolMode==="returning"?state.selectedProtocolDose:0]||selectable[0]||doses[0]}
 function renderProtocolDoseChoice(entry){
   const doses=entry?availableProtocolDoses(entry):[];protocolDoseChoice.hidden=!doses.length;if(!doses.length)return;
-  protocolStarter.checked=state.protocolMode==="starter";protocolReturning.checked=state.protocolMode==="returning";returningDoseField.hidden=state.protocolMode!=="returning";
-  protocolDoseSelect.innerHTML=doses.map((dose,index)=>`<option value="${index}">${escapeHtml(dose.weekLabel?`${dose.weekLabel} — ${doseText(dose)}`:doseText(dose))}${index===0?" — STARTER":""}</option>`).join("");
-  state.selectedProtocolDose=Math.min(state.selectedProtocolDose,doses.length-1);protocolDoseSelect.value=String(state.selectedProtocolDose);
-  const chosen=selectedPdfDose(entry);protocolDoseNote.textContent=state.protocolMode==="returning"?`The downloaded protocol will calculate the unit draw for ${doseText(chosen)}${chosen.weekLabel?` (${chosen.weekLabel})`:""}.`:`The downloaded protocol will calculate the starter-dose unit draw for ${doseText(chosen)}.`;
+  const selectable=state.protocolMode==="returning"?doses.slice(1):doses;
+  protocolStarter.checked=state.protocolMode==="starter";protocolReturning.checked=state.protocolMode==="returning";returningDoseField.hidden=state.protocolMode!=="returning"||!selectable.length;
+  protocolDoseSelect.innerHTML=selectable.map((dose,index)=>`<option value="${index}">${escapeHtml(dose.weekLabel?`${dose.weekLabel} — ${doseText(dose)}`:doseText(dose))}${state.protocolMode==="starter"&&index===0?" — STARTER":""}</option>`).join("");
+  state.selectedProtocolDose=Math.min(state.selectedProtocolDose,Math.max(0,selectable.length-1));protocolDoseSelect.value=String(state.selectedProtocolDose);
+  const chosen=selectedPdfDose(entry);protocolDoseNote.textContent=state.protocolMode==="returning"?(selectable.length?`The downloaded protocol will calculate the unit draw for ${doseText(chosen)}${chosen.weekLabel?` (${chosen.weekLabel})`:""}.`:"No post-starter dose options are listed for this product."):`The downloaded protocol will calculate the starter-dose unit draw for ${doseText(chosen)}.`;
 }
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
