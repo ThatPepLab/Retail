@@ -73,33 +73,9 @@
 .cart-line.auto-supply{margin:8px -8px;padding:13px 10px;border:2px solid var(--navy);border-radius:10px;background:#f2f6fb}
 .cart-line.auto-supply .automatic-quantity{grid-column:1/-1;color:var(--navy);font-size:12px;font-weight:900}
 
-
-/* Research Intern and Research Pro comparison */
-.price-grid.research-options{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none;align-items:start}
-.research-strength-header{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:11px 14px;border:2px solid var(--navy);border-radius:11px;background:#f4f7fb;color:var(--navy)}
-.research-strength-header>strong{font-size:16px}
-.research-card{padding:0;overflow:hidden;background:#fff}
-.research-card-heading{min-height:116px;padding:17px 18px}
-.research-card-heading p{margin:0 0 5px;font-size:12px;font-weight:900;letter-spacing:.12em}
-.research-card-heading h3{margin:0;font-size:22px}
-.research-card-heading span{display:block;margin-top:5px;font-size:12px;font-weight:700}
-.research-intern-card{border:2px solid var(--orange)}
-.research-intern-card .research-card-heading{background:var(--orange);color:#fff}
-.research-pro-card{border:2px solid var(--navy)}
-.research-pro-card .research-card-heading{background:var(--navy);color:#fff}
-.research-card .stock-banner{margin:12px 14px 0}
-.research-card fieldset,.research-card>.add-button,.intern-pen-offer,.intern-price-note{margin-left:14px;margin-right:14px}
-.research-card fieldset{margin-top:14px}
-.research-card>.add-button{width:calc(100% - 28px);margin-bottom:14px}
-.intern-pen-offer{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:14px;padding:18px 14px;border:2px solid var(--orange);border-radius:11px;background:#fff6ed}
-.intern-pen-offer span strong,.intern-pen-offer span small{display:block}
-.intern-pen-offer span strong{color:var(--navy);font-size:15px}
-.intern-pen-offer span small{margin-top:5px;color:var(--muted);font-size:11px;line-height:1.35}
-.intern-pen-offer>b{color:var(--deep);font-size:28px}
-.intern-price-note{color:var(--muted);font-size:11px;font-weight:750;line-height:1.4}
-.intern-add-button{background:var(--navy)}
-.intern-add-button:hover,.intern-add-button:focus{background:var(--deep)}
-@media(max-width:700px){.price-grid.research-options{grid-template-columns:1fr}.research-card-heading{min-height:0}}
-
-.price-grid.research-options.single-research-option{grid-template-columns:minmax(0,430px)}
-@media(max-width:700px){.price-grid.research-options.single-research-option{grid-template-columns:1fr}}
+.preparation-choice{display:flex;gap:12px;margin:14px 0;padding:14px;border:2px solid var(--orange);border-radius:12px;background:#fff7ed;color:var(--navy);cursor:pointer}
+.preparation-choice input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--orange)}
+.preparation-choice span{display:grid;gap:3px}
+.preparation-choice strong{font-size:15px;color:var(--navy)}
+.preparation-choice small{color:var(--muted);font-size:12px;line-height:1.4}
+.preparation-choice em{margin-top:3px;color:var(--orange);font-size:13px;font-style:normal;font-weight:900}
