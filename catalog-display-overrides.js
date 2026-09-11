@@ -2,6 +2,7 @@
   const DISPLAY_RENAMES=new Map([
     ["Semaglutide (GLP-1)","GLP-1SG"],
     ["Semaglutide","GLP-1SG"],
+    ["Cagrilintide + Semaglutide","Cagrilintide + GLP-1SG"],
     ["Tirzepatide (GLP-2)","GLP-2TR"]
   ]);
   const DESCRIPTION_BY_PRODUCT=new Map([
