@@ -68,23 +68,68 @@ function productStrengths(product){if(isBacWater(product?.name))return["Choose q
 function highestPriceItem(product,strength){const candidates=productItems(product).filter(item=>item.strength===strength);if(!candidates.length)return null;return{strength,retail:Object.fromEntries(Object.keys(tierInfo).map(key=>[key,Math.max(...candidates.map(item=>Number(item.retail?.[key])||0))]))}}
 function matchingProducts(){const query=search.value.trim().toLowerCase();return query?state.products.filter(product=>product.name.toLowerCase().includes(query)||displayProductName(product.name).toLowerCase().includes(query)).slice(0,12):[]}
 function stockChip(product){return productInStock(product)?'<span class="stock-chip">IN STOCK</span>':""}
+const catalogUseDescriptions=[
+  [/pt-?141/i,"Commonly known as an arousal peptide and discussed for sexual interest and response."],
+  [/alprostadil/i,"Commonly discussed for supporting erectile response and sexual function."],
+  [/oxytocin/i,"Often called the bonding hormone and discussed for intimacy, connection, and social comfort."],
+  [/kisspeptin/i,"Commonly discussed for reproductive-hormone signaling, fertility, and libido support."],
+  [/\bhcg\b|\bhmg\b|gonadorelin/i,"Commonly discussed for fertility and natural reproductive-hormone signaling."],
+  [/testosterone/i,"Commonly discussed for strength, energy, libido, and hormone support."],
+  [/glp-?3rt|retatrutide/i,"Commonly discussed for appetite control, weight management, and metabolic support."],
+  [/tirzepatide|trizepatide/i,"Commonly discussed for appetite control, weight management, and blood-sugar support."],
+  [/semaglutide/i,"Commonly discussed for appetite control, portion control, and weight management."],
+  [/cagrilintide|mazdutide|survodutide|eloralintide/i,"Commonly discussed for appetite reduction, weight management, and metabolic support."],
+  [/adipotide|aod-?9604|hgh fragment/i,"Commonly discussed for fat-loss and body-composition research."],
+  [/5-amino-1mq|slu-?pp|aicar/i,"Commonly discussed for metabolism, energy use, and body-composition support."],
+  [/mots-?c|humanin/i,"Commonly discussed for energy, exercise endurance, and healthy metabolic function."],
+  [/ss-?31/i,"Commonly discussed for mitochondrial energy, stamina, and recovery support."],
+  [/nad\+/i,"Commonly discussed for cellular energy, mental clarity, and healthy-aging support."],
+  [/l-carnitine|lipo|mic\b|superhuman|shred blend|lemon bottle/i,"Commonly discussed for energy, fat metabolism, and body-composition support."],
+  [/bpc-?157.*tb500.*kpv/i,"Commonly called a recovery blend and discussed for injury, gut, and inflammation support."],
+  [/bpc-?157.*tb500|wolverine/i,"Commonly known as Wolverine and discussed for injury recovery, joints, tendons, and soft tissue."],
+  [/\bbpc-?157\b/i,"Commonly discussed for gut comfort and recovery of tendons, joints, and soft tissue."],
+  [/tb-?500/i,"Commonly discussed for mobility, soft-tissue recovery, and exercise recovery."],
+  [/\bkpv\b/i,"Commonly discussed for gut, skin, and inflammation support."],
+  [/ghk-?cu.*glutathione.*nadh/i,"Commonly discussed as a beauty, antioxidant, energy, and healthy-aging blend."],
+  [/ghk-?cu.*kpv|glow|klow/i,"Commonly discussed as a skin, hair, healing, and beauty-support blend."],
+  [/ghk-?cu|ahk-?cu|healthy hair|matrixyl|snap-?8/i,"Commonly discussed for healthier-looking skin, hair, collagen, and cosmetic support."],
+  [/melanotan-?1/i,"Commonly discussed for tanning and skin-pigmentation support."],
+  [/melanotan-?2/i,"Commonly discussed for tanning, skin pigmentation, and increased libido."],
+  [/botulinum/i,"Commonly discussed for softening the appearance of expression lines and wrinkles."],
+  [/tesamorelin/i,"Commonly discussed for growth-hormone support, recovery, and reducing abdominal fat."],
+  [/cjc-?1295.*ipamorelin/i,"Commonly discussed as a growth-hormone blend for sleep, recovery, and body composition."],
+  [/cjc-?1295|ipamorelin|sermorelin|ghrp|mk677/i,"Commonly discussed for natural growth-hormone support, sleep, recovery, and body composition."],
+  [/igf|mgf|follistatin|ace-?031|gdf-?8/i,"Commonly discussed for muscle growth, strength, and exercise recovery."],
+  [/semax.*selank/i,"Commonly discussed as a focus-and-calm combination for mood and mental clarity."],
+  [/semax|adamax|dihexa|cerebro|pinealon|cortagen|pe-?22/i,"Commonly discussed for focus, memory, mental clarity, and cognitive support."],
+  [/selank/i,"Commonly discussed for calm, stress relief, and mood support without heavy sedation."],
+  [/dsip|relaxation pm|melatonin/i,"Commonly discussed for relaxation and better sleep quality."],
+  [/epithalon/i,"Commonly discussed for sleep, healthy aging, and longevity research."],
+  [/glutathione/i,"Commonly known as a master antioxidant and discussed for detox, wellness, and recovery support."],
+  [/thymosin alpha|thymalin|vilon|crystagen|immunological/i,"Commonly discussed for immune-system and healthy-aging support."],
+  [/ll-?37/i,"Commonly discussed for immune defense and antimicrobial support."],
+  [/ara-?290/i,"Commonly discussed for nerve comfort, inflammation, and tissue-repair support."],
+  [/cartalax/i,"Commonly discussed for cartilage, joint comfort, and mobility support."],
+  [/cardiogen|vesugen|lysine-proline-valine/i,"Commonly discussed for cardiovascular and blood-vessel support."],
+  [/bronchogen|vip\b|vasoactive/i,"Commonly discussed for breathing, inflammation, and respiratory support."],
+  [/foxo4|pnc-?27/i,"Commonly discussed in experimental healthy-aging and cellular research."],
+  [/dermorphin/i,"Commonly discussed in pain-response research."],
+  [/vitamin b12/i,"Commonly used for energy, red-blood-cell support, and general wellness."],
+  [/water|saline|acetic acid/i,"A preparation supply used for research products."]
+];
 const catalogFallbacks={
-  "Weight Loss":"Studied for metabolic signaling, appetite regulation, and energy-balance pathways.",
-  "Energy & Metabolic":"Studied for cellular energy, mitochondrial function, and metabolic pathways.",
-  "Recovery & Repair":"Studied for cellular repair, recovery, and tissue-signaling pathways.",
-  "Growth & Performance":"Studied for growth-factor, performance, and recovery-related pathways.",
-  "Cognitive & Mood":"Studied for neurological signaling, cognition, mood, and sleep-related pathways.",
-  "Sexual & Hormone":"Studied for reproductive, hormonal, and related signaling pathways.",
-  "Skin, Hair & Beauty":"Studied for skin, hair, collagen, pigmentation, and regenerative pathways.",
-  "Immune & Wellness":"Studied for immune signaling, cellular protection, and wellness-related pathways.",
-  "Supplies":"A supporting laboratory supply for research preparation."
+  "Weight Loss":"Commonly discussed for appetite, weight-management, and metabolic support.",
+  "Energy & Metabolic":"Commonly discussed for energy, stamina, and metabolic support.",
+  "Recovery & Repair":"Commonly discussed for recovery, comfort, mobility, and tissue support.",
+  "Growth & Performance":"Commonly discussed for strength, recovery, sleep, and performance support.",
+  "Cognitive & Mood":"Commonly discussed for focus, mood, calm, memory, or sleep support.",
+  "Sexual & Hormone":"Commonly discussed for libido, sexual wellness, fertility, or hormone support.",
+  "Skin, Hair & Beauty":"Commonly discussed for skin, hair, collagen, tanning, or cosmetic support.",
+  "Immune & Wellness":"Commonly discussed for immune support, antioxidants, and healthy aging.",
+  "Supplies":"A supporting preparation supply for research products."
 };
 function catalogDescription(product){
-  const full=conciseDescription(protocolFor(product.name));
-  const fallback=catalogFallbacks[categoryFor(product.name)]||"A research product available in multiple strength options.";
-  const text=(full||fallback).replace(/\s+/g," ").trim();
-  const sentence=(text.match(/^[^.!?]+[.!?]/)||[text])[0];
-  return sentence.length<=165?sentence:sentence.slice(0,162).replace(/\s+\S*$/,"")+"…";
+  return catalogUseDescriptions.find(([pattern])=>pattern.test(product.name))?.[1]||catalogFallbacks[categoryFor(product.name)]||"A research product available in multiple strength options.";
 }
 function catalogCoaMarkup(product){
   const strengths=productStrengths(product);
@@ -108,7 +153,7 @@ function catalogCard(product){
 }
 function renderSuggestions(){const matches=matchingProducts();suggestions.hidden=!matches.length;suggestions.innerHTML=matches.map(product=>`<button type="button" class="${productInStock(product)?"in-stock":""}" data-product="${escapeHtml(product.name)}">${escapeHtml(displayProductName(product.name))}${stockChip(product)}</button>`).join("")}
 function formatArrival(value){if(!value)return"Arrival date pending";const date=new Date(`${value}T12:00:00`);return Number.isNaN(date.getTime())?String(value):`Expected ${new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(date)}`}
-function renderCatalog(){const selected=categorySelect.value,expanded=new Set([...catalogGroups.querySelectorAll(".catalog-group[open] summary span:first-child")].map(node=>node.textContent)),groups=new Map();state.products.forEach(product=>{const category=categoryFor(product.name);if(selected!=="all"&&category!==selected)return;if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});const ordered=[...categories.map(item=>item.name),"Other"];catalogGroups.innerHTML=ordered.filter(name=>groups.has(name)).map(name=>{const products=groups.get(name).sort((a,b)=>a.name.localeCompare(b.name)),open=selected!=="all"||expanded.has(name)?" open":"";return`<details class="catalog-group"${open}><summary><span>${escapeHtml(name)}</span><small>${products.length} product${products.length===1?"":"s"}</small></summary><div class="product-buttons">${products.map(catalogCard).join("")}</div></details>`}).join("")}
+function renderCatalog(){const selected=categorySelect.value,groups=new Map();state.products.forEach(product=>{const category=categoryFor(product.name);if(selected!=="all"&&category!==selected)return;if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});const ordered=[...categories.map(item=>item.name),"Other"];catalogGroups.innerHTML=ordered.filter(name=>groups.has(name)).map(name=>{const products=groups.get(name).sort((a,b)=>a.name.localeCompare(b.name));return`<section class="catalog-group"><header class="catalog-group-heading"><h3>${escapeHtml(name)}</h3><small>${products.length} product${products.length===1?"":"s"}</small></header><div class="product-buttons">${products.map(catalogCard).join("")}</div></section>`}).join("")}
 function renderStrengths(){if(!state.selectedProduct)return;const strengths=productStrengths(state.selectedProduct);strengthSelect.innerHTML=strengths.map(strength=>{const quantity=stockQuantity(state.selectedProduct.name,strength);return`<option value="${escapeHtml(strength)}">${escapeHtml(strength)}${quantity>0?` — ${quantity} available`:""}</option>`}).join("");if(!strengths.includes(state.selectedStrength))state.selectedStrength=strengths[0]||"";strengthSelect.value=state.selectedStrength}
 function chooseProduct(name){const product=state.products.find(item=>item.name===name);if(!product)return;state.selectedProduct=product;search.value=displayProductName(product.name);suggestions.hidden=true;selectedName.textContent=displayProductName(product.name);const entry=protocolFor(product.name),educationUrl=wikiUrl(entry);downloadProductPdf.hidden=!entry;productEducation.hidden=!educationUrl;productEducation.href=educationUrl||"#";productInfo.hidden=!entry&&!educationUrl;state.selectedStrength=productStrengths(product)[0]||"";state.protocolMode="starter";state.selectedProtocolDose=0;renderStrengths();renderProtocolDoseChoice(entry);selection.hidden=false;renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
 function pdfText(value){return String(value||"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,"")}
