@@ -3,12 +3,14 @@
     ["Semaglutide (GLP-1)","GLP-1SG"],
     ["Semaglutide","GLP-1SG"],
     ["Cagrilintide + Semaglutide","Cagrilintide + GLP-1SG"],
-    ["Tirzepatide (GLP-2)","GLP-2TR"]
+    ["Tirzepatide (GLP-2)","GLP-2TR"],
+    ["GLP-3RT 20mg + Trizepatide 40mg (10ml)","GLP-3RT + GLP-2TR Blend"]
   ]);
   const DESCRIPTION_BY_PRODUCT=new Map([
     ["Semaglutide","Semaglutide is commonly discussed for appetite control, portion control, and weight management."],
     ["Tirzepatide","Tirz is commonly discussed for appetite control, weight management, and blood-sugar support."],
-    ["GLP-3RT","Re+a is commonly discussed for appetite control, weight management, and metabolic support."]
+    ["GLP-3RT","Re+a is commonly discussed for appetite control, weight management, and metabolic support."],
+    ["GLP-3RT 20mg + Trizepatide 40mg (10ml)","A Re+a and Tirz blend commonly discussed for appetite control, weight management, and metabolic support."]
   ]);
   let scheduled=false;
   function renameExactText(root=document.body){
