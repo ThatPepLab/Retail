@@ -166,6 +166,7 @@ function protocolDoseRecords(entry){return displayFor(entry)?.doses?.length?disp
 function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
 function availableProtocolDoses(entry){return protocolDoseRecords(entry).filter(dose=>Number(dose.mg)>0)}
 function selectedPdfDose(entry){const doses=availableProtocolDoses(entry);return doses[state.protocolMode==="returning"?state.selectedProtocolDose:0]||doses[0]}
+function isGlpProduct(name){return /semaglutide|tirzepatide|trizepatide|retatrutide|glp-?1|glp-?2|glp-?3/i.test(String(name||""))}
 function renderProtocolDoseChoice(entry){
   const doses=entry?availableProtocolDoses(entry):[];protocolDoseChoice.hidden=!doses.length;if(!doses.length)return;
   const returning=state.protocolMode==="returning",firstReturningIndex=doses.length>1?1:0;
@@ -174,7 +175,7 @@ function renderProtocolDoseChoice(entry){
   protocolDoseSelect.disabled=!returning;
   if(returning){
     state.selectedProtocolDose=Math.max(firstReturningIndex,Math.min(state.selectedProtocolDose,doses.length-1));
-    protocolDoseSelect.innerHTML=doses.slice(firstReturningIndex).map((dose,index)=>{const actualIndex=index+firstReturningIndex;return `<option value="${actualIndex}">${escapeHtml(dose.weekLabel?`${dose.weekLabel} — ${doseText(dose)}`:doseText(dose))}</option>`}).join("");
+    protocolDoseSelect.innerHTML=doses.slice(firstReturningIndex).map((dose,index)=>{const actualIndex=index+firstReturningIndex;const warning=isGlpProduct(state.selectedProduct?.name)?" — Increase ONLY IF NECESSARY.":"";return `<option value="${actualIndex}">${escapeHtml((dose.weekLabel?`${dose.weekLabel} — ${doseText(dose)}`:doseText(dose))+warning)}</option>`}).join("");
   }else{
     state.selectedProtocolDose=0;
     const dose=doses[0];protocolDoseSelect.innerHTML=`<option value="0">${escapeHtml(dose.weekLabel?`${dose.weekLabel} — ${doseText(dose)}`:`Week 1 — ${doseText(dose)}`)}</option>`;
