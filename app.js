@@ -1,3 +1,8 @@
+const ageGate=document.querySelector("#age-gate"),ageYes=document.querySelector("#age-yes"),ageNo=document.querySelector("#age-no");
+function confirmRetailAge(){sessionStorage.setItem("tplRetailAge21V1","confirmed");ageGate.hidden=true;accessPassword.focus()}
+if(sessionStorage.getItem("tplRetailAge21V1")==="confirmed")ageGate.hidden=true;
+ageYes.addEventListener("click",confirmRetailAge);
+ageNo.addEventListener("click",()=>window.location.assign("https://www.google.com/"));
 const accessGate=document.querySelector("#access-gate"),accessForm=document.querySelector("#access-form"),accessPassword=document.querySelector("#access-password"),accessError=document.querySelector("#access-error"),accessButton=document.querySelector("#access-button");
 const copyPasswordButton=document.querySelector("#copy-password"),copyPasswordStatus=document.querySelector("#copy-password-status");
 const accessHash="8fa4abdde72800faaa6a93ca9d958427bc9584fcfdfaa77a911eea752258a16f";
