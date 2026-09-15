@@ -6,10 +6,11 @@
   <meta name="description" content="Search products, choose a vial package, and submit an order request.">\n  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n  <meta http-equiv="Pragma" content="no-cache">\n  <meta http-equiv="Expires" content="0">
   <title>Retail Product Catalog</title>
   <link rel="stylesheet" href="styles.css?v=20260914-3">
-  <link rel="stylesheet" href="access.css?v=20260814-1">
+  <link rel="stylesheet" href="access.css?v=20260915-1">
   <link rel="stylesheet" href="catalog.css?v=20260911-4">
 </head>
 <body class="site-locked">
+  <section id="age-gate" class="age-gate" aria-labelledby="age-title"><div class="age-card"><div class="access-mark" aria-hidden="true">21+</div><p class="section-label">AGE CONFIRMATION</p><h1 id="age-title">Are you 21 or older?</h1><p>You must be 21+ to continue.</p><div class="age-actions"><button id="age-yes" class="age-yes" type="button">Yes</button><button id="age-no" class="age-no" type="button">No</button></div></div></section>
   <section id="access-gate" class="access-gate" aria-labelledby="access-title"><form id="access-form" class="access-card"><div class="access-mark" aria-hidden="true">P</div><p class="section-label">RETAIL ACCESS</p><h1 id="access-title">Enter Password</h1><p>Enter the shared password to view the retail catalog.</p><label for="access-password">Password</label><input id="access-password" type="password" autocomplete="current-password" autofocus required><button id="access-button" type="submit">Open Catalog</button><p id="access-error" class="access-error" role="alert"></p><details class="password-copy"><summary>Copy access password</summary><div class="password-copy-row"><span class="masked-password" aria-label="Password hidden">•••••</span><button id="copy-password" type="button">Copy</button></div><p id="copy-password-status" role="status" aria-live="polite"></p></details></form></section>
   <section id="quick-list-modal" class="quick-list-modal" role="dialog" aria-modal="true" aria-labelledby="quick-list-title" hidden>
     <div class="quick-list-panel">
@@ -36,7 +37,7 @@
   <script src="vendor/jspdf.umd.min.js"></script>
   <script src="coa-widget.js?v=20260821-4" defer></script>
   <script src="order-fix.js?v=20260908-1" defer></script>
-  <script src="app.js?v=20260914-9" defer></script>
+  <script src="app.js?v=20260915-1" defer></script>
   <script src="catalog-display-overrides.js?v=20260911-3" defer></script>
 </body>
 </html>
