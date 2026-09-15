@@ -13,3 +13,15 @@
 .site-locked>header,.site-locked>main,.site-locked>footer{display:none!important}
 
 .password-copy{margin-top:10px;border:1px solid #dfe4eb;border-radius:10px;background:#f7f9fc;overflow:hidden}.password-copy summary{padding:11px 13px;color:#102d59;font-size:12px;font-weight:850;cursor:pointer;list-style-position:inside}.password-copy[open] summary{border-bottom:1px solid #dfe4eb}.password-copy-row{display:grid;grid-template-columns:1fr 92px;gap:9px;align-items:center;padding:12px 13px 5px}.masked-password{display:flex;align-items:center;min-height:43px;padding:0 12px;border:2px solid #cfd7e2;border-radius:8px;background:#fff;color:#081b36;font-size:20px;font-weight:900;letter-spacing:.18em}.access-card .password-copy-row button{width:auto;margin:0;padding:11px 12px;background:#102d59;color:#fff}.password-copy #copy-password-status{min-height:18px;margin:4px 13px 10px;color:#13795b;font-size:11px;font-weight:800}
+
+.age-gate{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 85% 15%,rgba(239,124,34,.32),transparent 30%),linear-gradient(145deg,#06162f,#102d59 62%,#ef7c22)}
+.age-gate[hidden]{display:none}
+.age-card{width:min(430px,100%);padding:30px;border-top:7px solid #ef7c22;border-radius:18px;background:#fff;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+.age-card .access-mark{margin:0 auto 18px}
+.age-card h1{margin:0;color:#081b36;font-size:30px}
+.age-card>p:not(.section-label){margin:10px 0 20px;color:#657186;line-height:1.5}
+.age-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+.age-actions button{padding:13px;border-radius:9px;font:inherit;font-weight:900;cursor:pointer}
+.age-yes{border:0;background:#ef7c22;color:#fff}
+.age-no{border:2px solid #102d59;background:#fff;color:#102d59}
+.age-actions button:hover,.age-actions button:focus-visible{filter:brightness(1.06);outline:3px solid rgba(239,124,34,.3);outline-offset:2px}
