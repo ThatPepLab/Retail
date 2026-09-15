@@ -29,6 +29,7 @@ const PREPARATION_PRICE=20;
 const PREPARATION_VIAL_CAPACITY=2;
 const isNasalPreparation=name=>/semax|selank/i.test(String(name||"").trim());
 const OIL_BASED_PRODUCT_PATTERN=/^(nandrolone decanoate|boldenone undecylenate|nandrolone phenylpropionate|methenolone enanthate|testosterone cypionate|testosterone enanthate|testosterone propionate|trenbolone acetate|trenbolone enanthate)$/i;
+const TABLET_PRODUCT_PATTERN=/^(arimidex|clenbuterol|clomid|dianabol 20|aromasin|cialis|viagra|turanabol|winstrol 10)$/i;
 const isOilBasedProduct=name=>OIL_BASED_PRODUCT_PATTERN.test(String(name||"").trim());
 const supportsPreparation=name=>!/^bac water$/i.test(String(name||"").trim())&&!isOilBasedProduct(name);
 function preparationInfo(name,vials){
@@ -52,7 +53,7 @@ const categories=[
   {name:"Supplies",test:/water|saline|phosphate buffered|acetic acid/i}
 ];
 function categoryFor(name){return categories.find(category=>category.test.test(name))?.name||"Other"}
-function visibleRetailProduct(product){const category=categoryFor(product?.name||"");if(category==="Other")return false;if(category==="Supplies")return isBacWater(product?.name);return true}
+function visibleRetailProduct(product){const name=String(product?.name||"").trim();if(TABLET_PRODUCT_PATTERN.test(name))return false;const category=categoryFor(name);if(category==="Other")return false;if(category==="Supplies")return isBacWater(name);return true}
 const normalizeName=value=>String(value||"").toLowerCase().replace(/thymosin beta-?4/g,"tb500").replace(/wolverine/g,"").replace(/[^a-z0-9]+/g,"");
 const protocolEntries=Array.isArray(window.PROTOCOL_DATA)?window.PROTOCOL_DATA:[];
 const protocolDisplay=window.PROTOCOL_DISPLAY_DATA||{};
