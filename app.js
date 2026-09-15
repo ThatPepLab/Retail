@@ -27,7 +27,9 @@ const AUTO_BAC_PRICE=10;
 const PREPARATION_PRICE=20;
 const PREPARATION_VIAL_CAPACITY=2;
 const isNasalPreparation=name=>/semax|selank/i.test(String(name||"").trim());
-const supportsPreparation=name=>!/^bac water$/i.test(String(name||"").trim());
+const OIL_BASED_PRODUCT_PATTERN=/^(nandrolone decanoate|boldenone undecylenate|nandrolone phenylpropionate|methenolone enanthate|testosterone cypionate|testosterone enanthate|testosterone propionate|trenbolone acetate|trenbolone enanthate)$/i;
+const isOilBasedProduct=name=>OIL_BASED_PRODUCT_PATTERN.test(String(name||"").trim());
+const supportsPreparation=name=>!/^bac water$/i.test(String(name||"").trim())&&!isOilBasedProduct(name);
 function preparationInfo(name,vials){
   const units=Math.ceil((Number(vials)||1)/PREPARATION_VIAL_CAPACITY);
   const nasal=isNasalPreparation(name);
@@ -37,6 +39,7 @@ const CART_QR={supplies:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAM0AAADNA
 const CART_QR_URLS={supplies:"https://thatpeplab.github.io/Supplies/",reorder:"https://thatpeplab.github.io/Retail/"};
 const isBacWater=name=>/^bac water$/i.test(String(name||"").trim());
 const categories=[
+  {name:"Oil Based",test:OIL_BASED_PRODUCT_PATTERN},
   {name:"Weight Loss",test:/semaglutide|tirzepatide|trizepatide|glp-?3rt|cagrilintide|cagilintide|mazdutide|survodutide|eloralintide|adipotide|aod-?9604|hgh fragment|lemon bottle|lipo lab|lipo-[bc]|lipo-c|fat blaster|5-amino/i},
   {name:"Energy & Metabolic",test:/mots|ss-?31|nad\+|aicar|slu-?pp|l-carnitine|lc120|lc216|mic\b|superhuman|humanin|vitamin b12/i},
   {name:"Recovery & Repair",test:/bpc|tb500|tb-?500|glow|klow|kpv|ll-?37|ara-?290|cartalax|bronchogen|cardiogen|vesugen|lysine-proline-valine/i},
