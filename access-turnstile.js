@@ -92,6 +92,8 @@
       return;
     }
     passwordAccepted = true;
+    // Count an accepted password once, before CAPTCHA; never send the password.
+    window.RetailAnalytics?.passwordAccepted?.();
     renderCaptcha();
   }, true);
 
