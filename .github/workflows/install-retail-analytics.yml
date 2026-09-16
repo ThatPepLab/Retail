@@ -1,0 +1,54 @@
+name: Install Retail analytics event hooks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-retail-analytics.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Connect page load and successful-password events
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          page = Path('index.html')
+          html = page.read_text(encoding='utf-8')
+          old_script = '  <script src="access-turnstile.js?v=20260914-1" defer></script>'
+          new_scripts = ('  <script src="retail-analytics.js?v=20260916-1" defer></script>\n'
+                         '  <script src="access-turnstile.js?v=20260916-1" defer></script>')
+          assert html.count(old_script) == 1, 'Expected old access script missing or duplicated'
+          assert 'retail-analytics.js' not in html, 'Analytics already installed; refusing duplicate'
+          html = html.replace(old_script, new_scripts, 1)
+          page.write_text(html, encoding='utf-8')
+
+          access_file = Path('access-turnstile.js')
+          access = access_file.read_text(encoding='utf-8')
+          old_success = '    passwordAccepted = true;\n    renderCaptcha();'
+          new_success = ('    passwordAccepted = true;\n'
+                         '    // Count an accepted password once, before CAPTCHA; never send the password.\n'
+                         '    window.RetailAnalytics?.passwordAccepted?.();\n'
+                         '    renderCaptcha();')
+          assert access.count(old_success) == 1, 'Expected password success handler missing or duplicated'
+          assert 'RetailAnalytics' not in access, 'Analytics hook already installed; refusing duplicate'
+          access = access.replace(old_success, new_success, 1)
+          access_file.write_text(access, encoding='utf-8')
+          assert html.count('retail-analytics.js?v=20260916-1') == 1
+          assert access.count('window.RetailAnalytics?.passwordAccepted?.();') == 1
+          PY
+          node --check retail-analytics.js
+          node --check access-turnstile.js
+      - name: Commit Retail event hooks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html access-turnstile.js
+          git diff --cached --exit-code && exit 0
+          git commit -m "Wire Retail page views and password-success analytics"
+          git push
