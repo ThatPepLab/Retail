@@ -1,0 +1,96 @@
+name: Install Retail shopping mode entry
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/install-shopping-mode-entry.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply mode chooser and shared product flow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          app = Path('app.js')
+          s = app.read_text(encoding='utf-8')
+          def change(old, new, label):
+              global s
+              count = s.count(old)
+              assert count == 1, f'{label}: expected 1 anchor, got {count}'
+              s = s.replace(old, new, 1)
+
+          change('quickListDismissed:false};', '''quickListDismissed:false};
+          const savedShoppingMode=sessionStorage.getItem("tplRetailShoppingModeV1");
+          state.shoppingMode=savedShoppingMode==="expert"?"expert":"beginner";
+          state.shoppingModeChosen=savedShoppingMode==="beginner"||savedShoppingMode==="expert";
+          state.purchaseMode=state.shoppingMode;''', 'restore shopper mode')
+
+          change('function matchingProducts(){', '''function productAvailableInShoppingMode(product){return state.shoppingMode!=="beginner"||supportsPreparation(product.name)||isBacWater(product.name)}
+          function shoppingProducts(){return state.products.filter(productAvailableInShoppingMode)}
+          function matchingProducts(){''', 'filter products by experience')
+          change('return query?state.products.filter(', 'return query?shoppingProducts().filter(', 'filter search matches')
+          change('for(const product of state.products)for(const strength of productStrengths(product))', 'for(const product of shoppingProducts())for(const strength of productStrengths(product))', 'filter best sellers')
+          change('if(!state.quickListDismissed)quickListModal.hidden=false', 'if(!state.quickListDismissed&&state.shoppingModeChosen)quickListModal.hidden=false', 'best sellers only after mode')
+          change('function renderCatalog(){const selected=categorySelect.value,groups=new Map();state.products.forEach(', 'function renderCatalog(){const selected=categorySelect.value,groups=new Map();shoppingProducts().forEach(', 'filter catalog')
+          change('function renderCatalog(){', '''function refreshShoppingCategories(){const previous=categorySelect.value,names=[...new Set(shoppingProducts().map(product=>categoryFor(product.name)))].sort();categorySelect.innerHTML='<option value="all">All categories</option>'+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");categorySelect.value=names.includes(previous)?previous:"all"}
+          function renderCatalog(){''', 'refresh visible category choices')
+          change('if(!product)return;state.selectedProduct=product;', 'if(!product||!productAvailableInShoppingMode(product))return;state.selectedProduct=product;', 'prevent unavailable product selection')
+          change('state.purchaseMode=supportsPreparation(product.name)?"beginner":"expert";', 'state.purchaseMode=supportsPreparation(product.name)?state.shoppingMode:"expert";', 'keep mode when selecting product')
+          change('function starterSelectionActive(){return state.protocolMode==="starter"&&availableProtocolDoses(protocolFor(state.selectedProduct?.name)).length>0&&supportsPreparation(state.selectedProduct?.name)}', 'function starterSelectionActive(){return state.purchaseMode==="beginner"&&state.protocolMode==="starter"&&availableProtocolDoses(protocolFor(state.selectedProduct?.name)).length>0&&supportsPreparation(state.selectedProduct?.name)}', 'starter limitation for beginner only')
+
+          start=s.index('function purchaseModeMarkup(){')
+          end=s.index('\nfunction priceCard(',start)
+          replacement='''function purchaseModeMarkup(){
+            if(isRetailRestockTablet(state.selectedProduct?.name))return '<div class="expert-only-note"><strong>Sealed package</strong><span>This product is offered as one 100-tablet package.</span></div>';
+            if(!supportsPreparation(state.selectedProduct?.name))return '<div class="expert-only-note"><strong>Expert only</strong><span>This product is offered as unprepared research vials.</span></div>';
+            const beginner=state.purchaseMode==="beginner",description=beginner?"Prepared, loaded and labeled":"Unprepared research vials";
+            return `<div class="mode-inline-note"><div><strong>${beginner?"Beginner":"Expert"} shopping</strong><span>${description}. Your choice applies across the catalog.</span></div><button class="mode-inline-change" type="button" data-change-shopping-mode>Change level</button></div>${starterSelectionActive()?'<div class="stability-note starter-only-note"><strong>Starter setup · Beginner only</strong><span>Week 1 is paired with one prepared vial.</span></div>':''}`;
+          }'''
+          assert s.count('function purchaseModeMarkup(){') == 1 and end > start, 'purchase markup anchor missing'
+          s=s[:start]+replacement+s[end:]
+
+          change('function renderStrengths(){', '''function setShoppingMode(mode){
+            if(mode!=="beginner"&&mode!=="expert")return;
+            state.shoppingMode=mode;state.shoppingModeChosen=true;state.purchaseMode=mode;
+            sessionStorage.setItem("tplRetailShoppingModeV1",mode);
+            if(state.selectedProduct&&!productAvailableInShoppingMode(state.selectedProduct)){
+              state.selectedProduct=null;state.selectedStrength="";selection.hidden=true;
+              selection.closest(".finder-card")?.classList.remove("product-selected");
+              search.value="";suggestions.hidden=true;
+            }
+            refreshShoppingCategories();renderCatalog();renderSuggestions();
+            if(state.selectedProduct)renderPrices();
+            renderQuickList();
+            document.dispatchEvent(new CustomEvent("retail-shopping-mode-changed",{detail:{mode}}));
+          }
+          function renderStrengths(){''', 'shared mode setter')
+          change('if(state.protocolMode==="starter")state.purchaseMode="beginner";', 'if(state.protocolMode==="starter"&&state.shoppingMode==="beginner")state.purchaseMode="beginner";', 'keep expert mode when choosing protocol dose')
+          change('const names=[...new Set(state.products.map(product=>categoryFor(product.name)))].sort();categorySelect.insertAdjacentHTML("beforeend",names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join(""));renderCatalog();renderQuickList()', 'refreshShoppingCategories();renderCatalog();renderQuickList()', 'initialize mode-aware categories')
+          app.write_text(s,encoding='utf-8')
+
+          html=Path('index.html')
+          page=html.read_text(encoding='utf-8')
+          old='<script src="access-turnstile.js?v=20260916-1" defer></script>'
+          assert page.count(old)==1, 'Retail script anchor missing'
+          page=page.replace(old,old+'\n  <script src="retail-shopping-mode.js?v=20260917-1" defer></script>',1)
+          html.write_text(page,encoding='utf-8')
+          assert 'shoppingModeChosen)quickListModal.hidden=false' in s
+          assert 'for(const product of shoppingProducts())' in s
+          assert 'supportsPreparation(product.name)?state.shoppingMode:"expert"' in s
+          assert 'const names=[...new Set(state.products.map(' not in s
+          print('Mode-first flow installed: saved choice, filtered catalog/search/quick list, global switch, correct prices, checkout unchanged.')
+          PY
+          node --check app.js
+          node --check retail-shopping-mode.js
+      - name: Commit updated Retail files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Ask shopping mode before Best Sellers and apply across Retail"
+          git push
