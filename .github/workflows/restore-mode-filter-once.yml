@@ -1,0 +1,56 @@
+name: Restore Retail mode-filtered Best Sellers once
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-mode-filter-once.yml'
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore original Best Sellers mode filtering only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          p=Path('app.js')
+          current=p.read_text(encoding='utf-8')
+          original=subprocess.check_output(['git','show','6a34daa1fee540c2b921369b0554f03e62af9328:app.js'],text=True)
+          def section(text,start,end):
+              assert text.count(start)==1 and text.count(end)==1, f'Unexpected function boundaries for {start}'
+              return text[text.index(start):text.index(end)]
+          for start,end in [('function quickListEntries(){','function quickListCard(entry){'),('function quickListCard(entry){','function renderQuickList(){')]:
+              before=section(current,start,end)
+              after=section(original,start,end)
+              assert before!=after, f'Already reverted or changed: {start}'
+              current=current.replace(before,after,1)
+          added_event='quickListGrid?.addEventListener("click",event=>{if(event.target.closest("[data-expert-only]"))document.getElementById("shopping-mode-change")?.click()});'
+          assert current.count(added_event)==1, 'Expert-only quick-list event changed; refusing blind edit'
+          current=current.replace(added_event,'',1)
+          assert section(current,'function quickListEntries(){','function quickListCard(entry){')==section(original,'function quickListEntries(){','function quickListCard(entry){')
+          assert section(current,'function quickListCard(entry){','function renderQuickList(){')==section(original,'function quickListCard(entry){','function renderQuickList(){')
+          assert 'function shoppingProducts(){return state.products.filter(productAvailableInShoppingMode)}' in current
+          assert 'data-expert-only' not in current
+          p.write_text(current,encoding='utf-8')
+          index=Path('index.html')
+          html=index.read_text(encoding='utf-8')
+          assert html.count('app.js?v=20260918-1')==1, 'Script version changed; refusing blind edit'
+          assert '<strong>Maintenance dosage</strong>' in html, 'Maintenance dosage update missing'
+          index.write_text(html.replace('app.js?v=20260918-1','app.js?v=20260918-2',1),encoding='utf-8')
+          print('PASS: Best Sellers filters Beginner oil-based products and retains them in Expert; other features unchanged')
+          PY
+          node --check app.js
+      - name: Commit only restored Best Sellers code and cache version
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m 'Restore mode-specific Best Sellers filtering in Retail'
+          git push
