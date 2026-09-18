@@ -1,0 +1,61 @@
+name: Show Expert-only incoming products in Retail Best Sellers once
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/show-expert-coming-soon-once.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add clearly labeled Expert-only incoming cards to Beginner Best Sellers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.js')
+          s=p.read_text(encoding='utf-8')
+          old_loop='for(const product of shoppingProducts())for(const strength of productStrengths(product))'
+          new_loop="for(const product of state.products.filter(p=>productAvailableInShoppingMode(p)||(state.shoppingMode==='beginner'&&isOilBasedProduct(p.name))))for(const strength of productStrengths(product))"
+          assert s.count(old_loop)==1, 'Best Sellers product filter changed; refusing blind edit'
+          s=s.replace(old_loop,new_loop,1)
+          card_lines=[line for line in s.splitlines(keepends=True) if line.startswith('function quickListCard(entry){')]
+          assert len(card_lines)==1, 'Expected one existing quick-list card function'
+          old_card=card_lines[0]
+          assert 'data-product=' in old_card and 'COMING SOON' in old_card
+          new_card='''function quickListCard(entry){
+            const name=displayProductName(entry.product.name),longName=name.length>18?" long-name":"";
+            const expertOnly=state.shoppingMode==="beginner"&&isOilBasedProduct(entry.product.name);
+            const status=entry.quantity>0?(entry.incoming?"IN STOCK · MORE ON WAY":"IN STOCK"):"COMING SOON";
+            const detail=entry.quantity>0?(entry.quantity+" available"+(entry.incoming?.expectedArrival?" · "+formatArrival(entry.incoming.expectedArrival):"")):(entry.incoming?.expectedArrival?formatArrival(entry.incoming.expectedArrival):"Arrival date pending");
+            const action=expertOnly?'data-expert-only="true"':`data-product="${escapeHtml(entry.product.name)}" data-strength="${escapeHtml(entry.strength)}"`;
+            return `<button type="button" class="quick-product-card" ${action}><span class="quick-product-name">${escapeHtml(name)}</span><span class="quick-product-strength">${escapeHtml(entry.strength)}</span><span class="quick-vial"><img src="assets/retail-vial-template.webp" alt="" width="500" height="500"><span class="${longName.trim()}">${escapeHtml(name)}</span></span><strong class="quick-product-status ${entry.quantity>0?"is-stock":"is-coming"}">${status}${expertOnly?' · EXPERT ONLY':''}</strong><small>${escapeHtml(detail)}${expertOnly?' · Select Expert to view options':''}</small></button>`;
+          }
+          '''
+          s=s.replace(old_card,new_card,1)
+          event_anchor='quickListClose?.addEventListener("click",closeQuickList);'
+          new_event='quickListGrid?.addEventListener("click",event=>{if(event.target.closest("[data-expert-only]"))document.getElementById("shopping-mode-change")?.click()});'
+          assert s.count(event_anchor)==1 and new_event not in s, 'Quick-list event anchor changed'
+          s=s.replace(event_anchor,event_anchor+new_event,1)
+          assert s.count(new_loop)==1 and s.count('EXPERT ONLY')>=1 and s.count(new_event)==1
+          p.write_text(s,encoding='utf-8')
+          index=Path('index.html')
+          h=index.read_text(encoding='utf-8')
+          old_tag='app.js?v=20260915-4'
+          assert h.count(old_tag)==1, 'App script version changed; refusing blind edit'
+          h=h.replace(old_tag,'app.js?v=20260918-1',1)
+          index.write_text(h,encoding='utf-8')
+          print('PASS: Incoming oil cards are visible but Expert-only in Beginner mode; existing Expert product selection remains unchanged')
+          PY
+          node --check app.js
+      - name: Commit only Retail code and script cache version
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html
+          git diff --cached --check
+          git diff --cached --quiet && exit 0
+          git commit -m 'Show incoming Expert-only products in Beginner Best Sellers with switch prompt'
+          git push
