@@ -1,7 +1,7 @@
 const ageGate=document.querySelector("#age-gate"),ageYes=document.querySelector("#age-yes"),ageNo=document.querySelector("#age-no"),accessGate=document.querySelector("#access-gate");
 function unlockSite(){accessGate.hidden=true;document.body.classList.remove("site-locked")}
-function confirmRetailAge(){sessionStorage.setItem("tplRetailAge21V1","confirmed");ageGate.hidden=true;unlockSite()}
-if(sessionStorage.getItem("tplRetailAge21V1")==="confirmed"){ageGate.hidden=true;unlockSite()}
+function confirmRetailAge(){sessionStorage.setItem("tplRetailAge21V1","confirmed");ageGate.hidden=true;window.RetailCaptcha?.show?.()}
+if(sessionStorage.getItem("tplRetailAge21V1")==="confirmed")ageGate.hidden=true;
 ageYes.addEventListener("click",confirmRetailAge);
 ageNo.addEventListener("click",()=>window.location.assign("https://www.google.com/"));
 
