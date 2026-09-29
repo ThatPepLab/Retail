@@ -262,7 +262,8 @@ function downloadSelectedProductPdf(){
 }
 function starterSelectionActive(){return state.purchaseMode==="beginner"&&state.protocolMode==="starter"&&availableProtocolDoses(protocolFor(state.selectedProduct?.name)).length>0&&supportsPreparation(state.selectedProduct?.name)}
 function activeTierInfo(){if(isOilBasedProduct(state.selectedProduct?.name))return oilTierInfo;if(isRetailRestockTablet(state.selectedProduct?.name))return tabletTierInfo;if(starterSelectionActive())return{one:beginnerTierInfo.one};return state.purchaseMode==="beginner"&&supportsPreparation(state.selectedProduct?.name)?beginnerTierInfo:expertTierInfo}
-function tierPeptidePrice(item,key,tier){if(isRetailRestockTablet(state.selectedProduct?.name))return Number(item.retail.one)||0;if(state.purchaseMode==="beginner"||isOilBasedProduct(state.selectedProduct?.name)){const oneVial=Number(item.retail.one)||0;return Math.round(oneVial*tier.vials*(1-tier.discountRate)*100)/100}return Number(item.retail[key])||0}
+const roundRetailPrice=value=>Math.ceil((Number(value)||0)/5)*5;
+function tierPeptidePrice(item,key,tier){if(isRetailRestockTablet(state.selectedProduct?.name))return roundRetailPrice(item.retail.one);if(state.purchaseMode==="beginner"||isOilBasedProduct(state.selectedProduct?.name)){const oneVial=Number(item.retail.one)||0;return roundRetailPrice(oneVial*tier.vials*(1-tier.discountRate))}return roundRetailPrice(item.retail[key])}
 function purchaseModeMarkup(){
   if(isRetailRestockTablet(state.selectedProduct?.name))return '<div class="expert-only-note"><strong>Sealed package</strong><span>This product is offered as one 100-tablet package.</span></div>';
   if(!supportsPreparation(state.selectedProduct?.name))return '<div class="expert-only-note"><strong>Expert only</strong><span>This product is offered as unprepared research vials.</span></div>';
