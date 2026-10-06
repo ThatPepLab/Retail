@@ -69,7 +69,7 @@ function wikiUrl(entry){
   const slug=wikiAliases.get(key)||name.toLowerCase().replace(/\bacetate\b/g,"").replace(/\b(?:with|no)\s+dac\b/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
   return slug?`https://peptides.wiki/peptides/${slug}/`:"";
 }
-const canonicalStockProduct=product=>{const value=String(product||"").trim();if(/^wolverine$/i.test(value))return"wolverine";const extra=wolverineParts(value);if(extra)return extra.length?"wolverine+"+extra.map(part=>part.toLowerCase().replace(/[^a-z0-9]+/g,"")).join("+"):"wolverine";return value.toLowerCase()};
+const canonicalStockProduct=product=>{const value=String(product||"").trim(),cleanExtras=parts=>parts.map(part=>part.toLowerCase().replace(/[^a-z0-9]+/g,"")).filter(Boolean).sort();if(/^wolverine$/i.test(value))return"wolverine";const named=value.match(/^wolverine\s*\+\s*(.+)$/i);if(named)return"wolverine+"+cleanExtras(named[1].split(/\s*\+\s*/)).join("+");const extra=wolverineParts(value);if(extra)return extra.length?"wolverine+"+cleanExtras(extra).join("+"):"wolverine";return value.toLowerCase()};
 const stockKey=(product,strength)=>`${canonicalStockProduct(product)}|${String(strength).trim().toLowerCase()}`;
 function stockQuantity(product,strength){return state.inventory.get(stockKey(product,strength))||0}
 function incomingInventory(product,strength){return state.incoming.get(stockKey(product,strength))||null}
