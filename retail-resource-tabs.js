@@ -7,13 +7,13 @@
   const GROUP_QR='https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=18&data='+encodeURIComponent(GROUP_URL);
   const main=document.querySelector('main.page');
   const hero=document.querySelector('.hero');
-  if(!main||!hero)return;
+  if(!main)return;
 
   const navShell=document.createElement('div');
   navShell.className='resource-nav-shell';
   navShell.innerHTML='<nav class="resource-nav" aria-label="Retail resources"><button class="resource-tab" type="button" data-resource-tab="home" aria-selected="true">Home</button><button class="resource-tab" type="button" data-resource-tab="shop" aria-selected="false">Shop</button><button class="resource-tab" type="button" data-resource-tab="coa" aria-selected="false">COA Library</button><button class="resource-tab" type="button" data-resource-tab="protocol" aria-selected="false">Protocol</button><button class="resource-cart-button" type="button" data-resource-cart>Go to Cart · <span data-cart-nav-count>0</span></button></nav>';
   const trust=document.querySelector('.retail-trust-strip');
-  (trust||hero).after(navShell);
+  if(trust)trust.after(navShell);else if(hero)hero.after(navShell);else main.before(navShell);
 
   const homePanel=document.createElement('section');
   homePanel.className='resource-panel home-panel';
