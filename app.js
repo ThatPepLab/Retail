@@ -147,7 +147,7 @@ function catalogCoaMarkup(product){
   const strengths=productStrengths(product);
   const ordered=[...strengths.filter(strength=>stockQuantity(product.name,strength)>0),...strengths.filter(strength=>stockQuantity(product.name,strength)<=0)];
   for(const strength of ordered){const markup=window.COARegistry?.markup(product.name,strength)||"";if(markup)return `<div class="catalog-coa"><span>${escapeHtml(strength)}</span>${markup}</div>`}
-  return '<span class="catalog-no-coa">No COA on file</span>';
+  return "";
 }
 function catalogCard(product){
   const name=displayProductName(product.name),inStock=productInStock(product),longName=name.length>18?" long-name":"";
