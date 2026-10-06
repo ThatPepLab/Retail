@@ -152,10 +152,13 @@ function catalogCoaMarkup(product){
   return "";
 }
 function catalogInventoryMarkup(product){
-  return productStrengths(product).filter(strength=>strength!=="Choose quantity in cart").map(strength=>{
+  return productStrengths(product).filter(strength=>{
+    if(strength==="Choose quantity in cart")return false;
+    return stockQuantity(product.name,strength)>0||Boolean(incomingInventory(product.name,strength));
+  }).map(strength=>{
     const quantity=stockQuantity(product.name,strength),incoming=incomingInventory(product.name,strength);
-    const status=quantity>0?(incoming?`${quantity} AVAILABLE · ON THE WAY`:`${quantity} AVAILABLE`):(incoming?"ON THE WAY":"COMING SOON");
-    const statusClass=quantity>0?(incoming?"is-available is-on-way":"is-available"):incoming?"is-on-way":"is-coming";
+    const status=quantity>0?(incoming?`${quantity} AVAILABLE · ON THE WAY`:`${quantity} AVAILABLE`):"ON THE WAY";
+    const statusClass=quantity>0?(incoming?"is-available is-on-way":"is-available"):"is-on-way";
     const detail=incoming?.expectedArrival?`<small>${escapeHtml(formatArrival(incoming.expectedArrival))}</small>`:"";
     return `<div class="catalog-inventory-row ${statusClass}"><span>${escapeHtml(strength)}</span><strong>${status}</strong>${detail}</div>`;
   }).join("");
