@@ -4,7 +4,7 @@
   const PROTOCOL_URL='https://thatpeplab.github.io/Protocol/';
   const GROUP_URL='https://chat.whatsapp.com/JR69PplAvxtLnCEXtDLHEx?mode=gi_t';
   const CONTACT_URL='https://wa.me/qr/VSFL3VKLDPTQD1?s=r';
-  const GROUP_IMAGE=window.RetailMedia?.whatsappGroupImage||'';
+  const GROUP_QR='https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=18&data='+encodeURIComponent(GROUP_URL);
   const main=document.querySelector('main.page');
   const hero=document.querySelector('.hero');
   if(!main||!hero)return;
@@ -26,7 +26,7 @@
         <p>Browse what we offer, review available testing, and order the amount that makes sense for your research.</p>
         <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop Products</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
       </div>
-      <div class="home-logo-crop" aria-label="That Pep Lab logo">${GROUP_IMAGE?`<img src="${GROUP_IMAGE}" alt="That Pep Lab">`:''}</div>
+      <div class="home-logo-crop" aria-label="That Pep Lab logo"><div class="home-logo-wordmark"><span>That</span><strong>Pep</strong><b>Lab</b></div></div>
     </div>
     <section class="difference-section" aria-labelledby="different-title">
       <div class="difference-heading"><p>HOW WE ARE DIFFERENT</p><h2 id="different-title">Built around the way we actually research.</h2></div>
@@ -37,7 +37,7 @@
       </div>
     </section>
     <section class="home-whatsapp-card">
-      <div class="home-whatsapp-image">${GROUP_IMAGE?`<a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer"><img src="${GROUP_IMAGE}" alt="That Pep Lab WhatsApp group QR code"></a>`:''}</div>
+      <div class="home-whatsapp-image"><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer"><img src="${GROUP_QR}" alt="That Pep Lab WhatsApp group QR code"></a></div>
       <div class="home-whatsapp-copy">
         <p class="home-kicker">STAY CONNECTED</p>
         <h2>Join the That Pep Lab WhatsApp group</h2>
@@ -95,7 +95,7 @@
         <h3>Prefer to connect with us directly?</h3>
         <p>Use the direct WhatsApp contact link for order help. You can also scan the group QR below to join the That Pep Lab community.</p>
         <a href="${CONTACT_URL}" target="_blank" rel="noopener noreferrer" class="whatsapp-primary">Message That Pep Lab on WhatsApp</a>
-        ${GROUP_IMAGE?`<a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="cart-group-qr"><img src="${GROUP_IMAGE}" alt="That Pep Lab WhatsApp group QR code"></a>`:''}
+        <a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="cart-group-qr"><img src="${GROUP_QR}" alt="That Pep Lab WhatsApp group QR code"></a>
         <a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="whatsapp-secondary">Join WhatsApp Group</a>
       </aside>
     </div>`;
