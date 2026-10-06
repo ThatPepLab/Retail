@@ -9,11 +9,20 @@
   const productKey = (value) => String(value || "").toLowerCase()
     .replace(/\d+(?:\.\d+)?\s*(?:mg|mcg|iu|ml)\b/g, "")
     .replace(/semaglutide|glp[\s-]*1sg/g, "glp1sg")
-    .replace(/tirzepatide|trizepatide|glp[\s-]*2tz/g, "glp2tz")
-    .replace(/retatrutide|glp[\s-]*3rt/g, "glp3rt")
+    .replace(/tirzepatide|trizepatide|tirzepetide|glp[\s-]*2tz/g, "glp2tz")
+    .replace(/retatrutide|glp[\s-]*(?:3rt|rt)\b/g, "glp3rt")
+    .replace(/hgh\s*191aa|somatropin|\bhgh\b/g, "hgh")
+    .replace(/igf[\s-]*1[\s-]*lr3/g, "igf1lr3")
+    .replace(/epitalon|epithalon/g, "epithalon")
+    .replace(/kisspeptin[\s-]*10/g, "kisspeptin")
+    .replace(/lipo[\s-]*c\s*(?:with|w)\s*b12/g, "lipocb12")
+    .replace(/bac(?:teriostatic)?\s*water/g, "bacwater")
+    .replace(/mot[\s-]*c|mots[\s-]*c/g, "motsc")
+    .replace(/cjc[\s-]*1295(?:\s*(?:no|without)\s*dac)?\s*[\/+&-]*\s*ipamorelin/g, "cjc1295ipamorelin")
     .replace(/thymosin\s*beta[\s-]*[45](?:\s*acetate)?|tb[\s-]*500/g, "tb500")
     .replace(/bpc[\s-]*157/g, "bpc157")
     .replace(/ghk[\s-]*cu/g, "ghkcu")
+    .replace(/\bblend\b/g, "")
     .replace(/[^a-z0-9]+/g, "");
   const strengthKey = (value) => {
     const text = String(value || "").toLowerCase().replace(/,/g, "");
