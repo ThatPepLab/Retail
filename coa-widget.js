@@ -1,6 +1,24 @@
 (() => {
   const SOURCE = location.pathname.toLowerCase().includes("/tplprice/") ? "coa-data.json" : "https://raw.githubusercontent.com/ThatPepLab/TPLPrice/main/coa-data.json?updated=" + Date.now();
   let snapshot = { completed: [], pending: [], updatedAt: null };
+  // Internal rule: uploaded COAs represent the current on-hand Retail lot and remain authoritative until replaced.
+  // Vendor COAs remain the fallback evidence for products/strengths without an uploaded on-hand COA.
+  const STATIC_ON_HAND_COAS = [
+    {
+      sourceType: "current-lot",
+      vendor: "TPL",
+      product: "GLP-3RT",
+      strength: "20mg",
+      analysisDate: "2026-09-17",
+      sampleReceived: "2026-09-14",
+      lab: "Bioviridian",
+      purity: "99.75%",
+      netContent: "21.44 mg",
+      lot: "LUSA8530-7 / BLUE CAP",
+      verificationCode: "COA9437",
+      reportUrl: "https://bioviridians.com/coa-search.html"
+    }
+  ];
   const esc = (value) => String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const approvedVendor = (value) => {
     const key = String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -37,10 +55,19 @@
   const prettyDate = (value) => { const date = new Date(String(value || "")); return Number.isNaN(date.getTime()) ? String(value || "Date not listed") : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date); };
   const matches = (product, strength) => {
     const productId = productKey(product), strengthId = strengthKey(strength);
+    const onHand = STATIC_ON_HAND_COAS.filter((record) => productKey(record.product) === productId && strengthKey(record.strength) === strengthId);
+    if (onHand.length) {
+      return {
+        completed: onHand.sort((a, b) => dateValue(b.analysisDate) - dateValue(a.analysisDate)),
+        pending: [],
+        source: "current-lot"
+      };
+    }
     const accepts = (record) => approvedVendor(record.vendor) && productKey(record.product) === productId && strengthKey(record.strength) === strengthId;
     return {
       completed: (snapshot.completed || []).filter(accepts).sort((a, b) => dateValue(b.analysisDate) - dateValue(a.analysisDate)),
-      pending: (snapshot.pending || []).filter(accepts).sort((a, b) => dateValue(b.dateSent) - dateValue(a.dateSent))
+      pending: (snapshot.pending || []).filter(accepts).sort((a, b) => dateValue(b.dateSent) - dateValue(a.dateSent)),
+      source: "vendor"
     };
   };
   const markup = (product, strength, vendor) => {
@@ -64,9 +91,11 @@
     const modal = document.querySelector("#coa-directory-modal");
     document.querySelector("#coa-modal-title").textContent = product + " · " + strength;
     const completeCards = result.completed.slice(0, 1).map((record) => {
-      const report = record.reportUrl ? '<a class="coa-report-link" href="' + esc(record.reportUrl) + '" target="_blank" rel="noopener noreferrer">Open Official COA</a>' : '<span class="coa-unavailable">Verification link not listed</span>';
+      const reportLabel = record.verificationCode ? "Verify COA" : "Open Official COA";
+      const report = record.reportUrl ? '<a class="coa-report-link" href="' + esc(record.reportUrl) + '" target="_blank" rel="noopener noreferrer">' + reportLabel + '</a>' : '<span class="coa-unavailable">Verification link not listed</span>';
       const preview = record.previewUrl ? '<details class="coa-report-preview"><summary>Preview report</summary><iframe title="COA preview" src="' + esc(record.previewUrl) + '" loading="lazy"></iframe></details>' : "";
-      return '<article class="coa-record"><div class="coa-record-heading"><strong>' + "Latest COA" + "</strong><span>Completed " + esc(prettyDate(record.analysisDate)) + "</span></div><dl><div><dt>Testing lab</dt><dd>" + esc(record.lab || "Not listed") + "</dd></div><div><dt>Purity</dt><dd>" + esc(record.purity || "Not listed") + "</dd></div><div><dt>Net content</dt><dd>" + esc(record.netContent || "Not listed") + "</dd></div></dl>" + report + preview + "</article>";
+      const lotDetails = (record.lot || record.verificationCode) ? '<dl><div><dt>Lot</dt><dd>' + esc(record.lot || "Not listed") + '</dd></div><div><dt>Verification</dt><dd>' + esc(record.verificationCode || "Not listed") + '</dd></div><div><dt>Sample received</dt><dd>' + esc(record.sampleReceived ? prettyDate(record.sampleReceived) : "Not listed") + '</dd></div></dl>' : "";
+      return '<article class="coa-record"><div class="coa-record-heading"><strong>' + "Latest COA" + "</strong><span>Completed " + esc(prettyDate(record.analysisDate)) + "</span></div><dl><div><dt>Testing lab</dt><dd>" + esc(record.lab || "Not listed") + "</dd></div><div><dt>Purity</dt><dd>" + esc(record.purity || "Not listed") + "</dd></div><div><dt>Net content</dt><dd>" + esc(record.netContent || "Not listed") + "</dd></div></dl>" + lotDetails + report + preview + "</article>";
     }).join("");
     const latestCompletedDate = result.completed.length ? dateValue(result.completed[0].analysisDate) : 0;
     const pendingToShow = result.pending.filter((record) => !result.completed.length || dateValue(record.dateSent) > latestCompletedDate).slice(0, 1);
