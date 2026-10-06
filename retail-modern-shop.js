@@ -1,16 +1,17 @@
 (() => {
   const hero=document.querySelector('.hero');
+  const main=document.querySelector('main.page');
   const finder=document.querySelector('.finder-card');
   const category=document.querySelector('#category');
   const catalog=document.querySelector('#catalog-groups');
   const search=document.querySelector('#search');
-  if(!hero||!finder||!category||!catalog||!search)return;
+  if(!finder||!category||!catalog||!search)return;
 
   const trust=document.createElement('div');
   trust.className='retail-trust-strip';
   trust.setAttribute('aria-label','Shop features');
   trust.innerHTML='<span>LIVE INVENTORY</span><span>BATCH COA LINKS</span><span>PACKAGE PRICING</span><span>$10 SHIPPING · FREE PICKUP</span>';
-  hero.after(trust);
+  if(hero)hero.after(trust);else if(main)main.before(trust);else finder.before(trust);
 
   const shell=document.createElement('section');
   shell.className='shop-tabs-shell';
