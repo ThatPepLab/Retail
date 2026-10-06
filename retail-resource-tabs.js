@@ -26,7 +26,7 @@
         <p>Browse what we offer, review available testing, and order the amount that makes sense for your research.</p>
         <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop Products</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
       </div>
-      <div class="home-logo-crop" aria-label="That Pep Lab logo"><div class="home-logo-wordmark"><span>That</span><strong>Pep</strong><b>Lab</b></div></div>
+      <div class="home-logo-crop" aria-label="That Pep Lab logo"><img src="${window.RetailBrandLogo||''}" alt="That Pep Lab"></div>
     </div>
     <section class="difference-section" aria-labelledby="different-title">
       <div class="difference-heading"><p>HOW WE ARE DIFFERENT</p><h2 id="different-title">Built around the way we actually research.</h2></div>
