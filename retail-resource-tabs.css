@@ -1,0 +1,42 @@
+
+.resource-nav-shell{max-width:1280px;margin:18px auto 0;padding:0 28px}
+.resource-nav{display:flex;gap:8px;overflow-x:auto;padding:7px;border:1px solid #d5deea;border-radius:14px;background:#fff;box-shadow:0 5px 18px rgba(16,45,89,.08)}
+.resource-tab{flex:1 0 150px;min-height:44px;border:2px solid transparent;border-radius:10px;background:#f4f7fb;color:#102e67;font-weight:950;cursor:pointer}
+.resource-tab:hover,.resource-tab:focus-visible{border-color:#e85d04;outline:0}
+.resource-tab[aria-selected="true"]{border-color:#e85d04;background:#102e67;color:#fff;box-shadow:inset 0 -3px 0 #e85d04}
+.resource-panel{max-width:1280px;margin:20px auto 0;padding:0 28px 34px}
+.resource-panel[hidden]{display:none!important}
+.resource-card{padding:24px;border:1px solid #d5deea;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(16,45,89,.08)}
+.resource-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}
+.resource-heading p{margin:0;color:#b54a00;font-size:11px;font-weight:950;letter-spacing:.12em}
+.resource-heading h2{margin:4px 0 0;color:#102e67;font-size:28px}
+.resource-heading span{max-width:520px;color:#59677b;font-size:13px;line-height:1.45}
+.coa-library-tools{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:10px;margin-bottom:16px}
+.coa-library-tools input,.coa-library-tools select{width:100%;min-height:44px;padding:10px 12px;border:2px solid #c3cede;border-radius:9px;background:#fff;color:#12213f;font:inherit}
+.coa-library-count{margin:0 0 12px;color:#59677b;font-size:12px;font-weight:850}
+.coa-library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.coa-library-card{display:flex;flex-direction:column;min-height:180px;padding:16px;border:2px solid #d5dde8;border-radius:13px;background:#fff}
+.coa-library-card.has-complete{border-color:#e85d04}
+.coa-library-card.has-pending{border-style:dashed;border-color:#c56a22}
+.coa-library-card h3{margin:0;color:#102e67;font-size:17px;line-height:1.2}
+.coa-strength{margin:5px 0 10px;color:#b54a00;font-size:14px;font-weight:950}
+.coa-meta{display:grid;gap:3px;margin-bottom:13px;color:#536177;font-size:12px;line-height:1.4}
+.coa-library-card button{margin-top:auto;min-height:40px;border:0;border-radius:8px;background:#102e67;color:#fff;font-weight:900;cursor:pointer}
+.coa-library-card button:hover,.coa-library-card button:focus-visible{background:#e85d04}
+.coa-empty-library{padding:28px;text-align:center;color:#59677b}
+.protocol-gate{max-width:560px;margin:10px auto;padding:28px;border:2px solid #d5dde8;border-radius:15px;background:#f8fafc;text-align:center}
+.protocol-gate .lock-mark{display:inline-flex;width:58px;height:58px;align-items:center;justify-content:center;margin-bottom:10px;border-radius:50%;background:#102e67;color:#fff;font-size:24px;font-weight:950}
+.protocol-gate h3{margin:0 0 7px;color:#102e67;font-size:24px}
+.protocol-gate p{margin:0 0 16px;color:#59677b;line-height:1.5}
+.protocol-password-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+.protocol-password-row input{min-width:0;padding:11px 12px;border:2px solid #c3cede;border-radius:9px;font:inherit}
+.protocol-password-row button,.protocol-open-full{border:0;border-radius:9px;background:#102e67;color:#fff;padding:11px 16px;font-weight:900;cursor:pointer}
+.protocol-password-row button:hover,.protocol-open-full:hover{background:#e85d04}
+.protocol-error{min-height:20px;margin:9px 0 0!important;color:#a33!important;font-size:12px;font-weight:850}
+.protocol-workspace{display:grid;gap:10px}
+.protocol-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #d5deea;border-radius:10px;background:#f8fafc}
+.protocol-toolbar span{color:#59677b;font-size:12px}
+.protocol-open-full{text-decoration:none;text-align:center}
+.protocol-frame{width:100%;height:min(78vh,900px);border:2px solid #102e67;border-radius:12px;background:#fff}
+@media(max-width:900px){.coa-library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.resource-nav-shell,.resource-panel{padding-left:12px;padding-right:12px}.resource-heading{align-items:flex-start;flex-direction:column}.coa-library-tools{grid-template-columns:1fr}.coa-library-grid{grid-template-columns:1fr}.protocol-password-row{grid-template-columns:1fr}.protocol-toolbar{align-items:stretch;flex-direction:column}.protocol-open-full{width:100%}.protocol-frame{height:72vh}}
