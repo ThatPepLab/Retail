@@ -41,6 +41,9 @@
 .catalog-inventory-row.is-on-way strong:before{content:"→ ";font-weight:950}
 .catalog-inventory-row.is-available strong:before{content:"✓ ";font-weight:950}
 .catalog-product-card.on-the-way{border-style:dashed}
+.catalog-product-card.special-order{border-color:var(--navy);box-shadow:0 7px 18px rgba(16,45,89,.14)}
+.catalog-special-order{display:flex;align-items:center;justify-content:center;min-height:42px;padding:9px 12px;border:2px solid var(--navy);border-radius:10px;background:#f2f6fb;color:var(--navy);font-size:11px;font-weight:950;letter-spacing:.045em;text-align:center}
+.special-order-banner{margin:-20px -20px 16px;padding:10px 18px;border-radius:12px 12px 0 0;background:var(--navy);color:#fff;font-size:12px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
 .catalog-card-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding:0 15px 12px}
 .catalog-stock,.catalog-no-coa{display:inline-flex;align-items:center;min-height:30px;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.04em}
 .catalog-stock{background:var(--orange);color:#fff}
