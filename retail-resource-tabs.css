@@ -57,7 +57,7 @@
 .home-whatsapp-button,.whatsapp-secondary,.continue-shopping{background:#fff;color:#102e67;border:2px solid #102e67}
 .home-whatsapp-button:hover,.whatsapp-secondary:hover,.continue-shopping:hover{border-color:#e85d04;color:#b54a00}
 .home-logo-crop{position:relative;width:160px;height:160px;margin:auto;overflow:hidden;border-radius:50%;background:#fff;border:5px solid #fff;box-shadow:0 12px 35px rgba(16,45,89,.18)}
-.home-logo-crop img{position:absolute;width:858px;max-width:none;height:auto;left:-354px;top:-419px}
+.home-logo-crop img{display:block;width:100%;height:100%;object-fit:contain}
 .difference-section{margin-top:18px;padding:26px;border:1px solid #d5deea;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(16,45,89,.07)}
 .difference-heading p{margin:0;color:#b54a00;font-size:11px;font-weight:950;letter-spacing:.12em}
 .difference-heading h2{margin:4px 0 16px;color:#102e67;font-size:28px}
