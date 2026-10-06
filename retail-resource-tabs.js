@@ -2,15 +2,50 @@
   'use strict';
   const PROTOCOL_HASH='8fa4abdde72800faaa6a93ca9d958427bc9584fcfdfaa77a911eea752258a16f';
   const PROTOCOL_URL='https://thatpeplab.github.io/Protocol/';
+  const GROUP_URL='https://chat.whatsapp.com/JR69PplAvxtLnCEXtDLHEx?mode=gi_t';
+  const CONTACT_URL='https://wa.me/qr/VSFL3VKLDPTQD1?s=r';
+  const GROUP_IMAGE=window.RetailMedia?.whatsappGroupImage||'';
   const main=document.querySelector('main.page');
   const hero=document.querySelector('.hero');
   if(!main||!hero)return;
 
   const navShell=document.createElement('div');
   navShell.className='resource-nav-shell';
-  navShell.innerHTML='<nav class="resource-nav" aria-label="Retail resources"><button class="resource-tab" type="button" data-resource-tab="shop" aria-selected="true">Shop</button><button class="resource-tab" type="button" data-resource-tab="coa" aria-selected="false">COA Library</button><button class="resource-tab" type="button" data-resource-tab="protocol" aria-selected="false">Protocol</button></nav>';
+  navShell.innerHTML='<nav class="resource-nav" aria-label="Retail resources"><button class="resource-tab" type="button" data-resource-tab="home" aria-selected="true">Home</button><button class="resource-tab" type="button" data-resource-tab="shop" aria-selected="false">Shop</button><button class="resource-tab" type="button" data-resource-tab="coa" aria-selected="false">COA Library</button><button class="resource-tab" type="button" data-resource-tab="protocol" aria-selected="false">Protocol</button><button class="resource-cart-button" type="button" data-resource-cart>Go to Cart · <span data-cart-nav-count>0</span></button></nav>';
   const trust=document.querySelector('.retail-trust-strip');
   (trust||hero).after(navShell);
+
+  const homePanel=document.createElement('section');
+  homePanel.className='resource-panel home-panel';
+  homePanel.dataset.resourcePanel='home';
+  homePanel.innerHTML=`
+    <div class="home-brand-card">
+      <div class="home-brand-copy">
+        <p class="home-kicker">THAT PEP LAB</p>
+        <h2>Research-focused products with help when you need it.</h2>
+        <p>Browse what we offer, review available testing, and order the amount that makes sense for your research.</p>
+        <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop Products</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
+      </div>
+      <div class="home-logo-crop" aria-label="That Pep Lab logo">${GROUP_IMAGE?`<img src="${GROUP_IMAGE}" alt="That Pep Lab">`:''}</div>
+    </div>
+    <section class="difference-section" aria-labelledby="different-title">
+      <div class="difference-heading"><p>HOW WE ARE DIFFERENT</p><h2 id="different-title">Built around the way we actually research.</h2></div>
+      <div class="difference-grid">
+        <article><strong>Order what you need</strong><span>Choose the product, strength, and package that fits your research instead of being forced into a preset experience level.</span></article>
+        <article><strong>Help when you need it</strong><span>Use the site, our order form, or WhatsApp when you need help with an order or product information.</span></article>
+        <article><strong>Products sold are personally researched in our lab</strong><span>Products we sell are selected through our own research process, with available COAs and testing information kept alongside the catalog.</span></article>
+      </div>
+    </section>
+    <section class="home-whatsapp-card">
+      <div class="home-whatsapp-image">${GROUP_IMAGE?`<a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer"><img src="${GROUP_IMAGE}" alt="That Pep Lab WhatsApp group QR code"></a>`:''}</div>
+      <div class="home-whatsapp-copy">
+        <p class="home-kicker">STAY CONNECTED</p>
+        <h2>Join the That Pep Lab WhatsApp group</h2>
+        <p>Use the group for updates and community conversation. Scan the QR code or use the button below.</p>
+        <a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="whatsapp-primary">Join WhatsApp Group</a>
+      </div>
+    </section>
+    <div class="home-faq-slot"></div>`;
 
   const coaPanel=document.createElement('section');
   coaPanel.className='resource-panel';
@@ -43,22 +78,89 @@
         <iframe id="protocol-frame" class="protocol-frame" title="That Pep Lab Protocol" loading="lazy"></iframe>
       </div>
     </div>`;
-  main.after(protocolPanel);
-  main.after(coaPanel);
+
+  const cartPanel=document.createElement('section');
+  cartPanel.className='resource-panel cart-resource-panel';
+  cartPanel.dataset.resourcePanel='cart';
+  cartPanel.hidden=true;
+  cartPanel.innerHTML=`
+    <div class="cart-resource-heading">
+      <div><p class="home-kicker">CHECKOUT</p><h2>Finish your order your way</h2><p>Review the cart, then submit the order form or connect with us through WhatsApp.</p></div>
+      <button type="button" class="continue-shopping" data-go-shop>Continue Shopping</button>
+    </div>
+    <div class="cart-resource-layout">
+      <div class="cart-section-host"></div>
+      <aside class="cart-whatsapp-card">
+        <p class="home-kicker">WHATSAPP</p>
+        <h3>Prefer to connect with us directly?</h3>
+        <p>Use the direct WhatsApp contact link for order help. You can also scan the group QR below to join the That Pep Lab community.</p>
+        <a href="${CONTACT_URL}" target="_blank" rel="noopener noreferrer" class="whatsapp-primary">Message That Pep Lab on WhatsApp</a>
+        ${GROUP_IMAGE?`<a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="cart-group-qr"><img src="${GROUP_IMAGE}" alt="That Pep Lab WhatsApp group QR code"></a>`:''}
+        <a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="whatsapp-secondary">Join WhatsApp Group</a>
+      </aside>
+    </div>`;
+
+  main.before(homePanel);
+  main.after(coaPanel,protocolPanel,cartPanel);
+
+  const faq=main.querySelector('.research-faq');
+  if(faq)homePanel.querySelector('.home-faq-slot')?.append(faq);
+  const cartSection=main.querySelector('.cart-section');
+  if(cartSection)cartPanel.querySelector('.cart-section-host')?.append(cartSection);
 
   const buttons=[...navShell.querySelectorAll('[data-resource-tab]')];
+  const cartButtons=[...document.querySelectorAll('[data-resource-cart]')];
   const quick=document.querySelector('#quick-list-modal');
-  function selectTab(name){
+  let activeView='home';
+
+  const floatingCart=document.createElement('button');
+  floatingCart.type='button';
+  floatingCart.className='floating-cart-button';
+  floatingCart.dataset.resourceCart='';
+  floatingCart.innerHTML='Go to Cart · <span data-floating-cart-count>0</span>';
+  document.body.appendChild(floatingCart);
+  cartButtons.push(floatingCart);
+
+  function selectView(name,smooth=true){
+    activeView=name;
     buttons.forEach(button=>button.setAttribute('aria-selected',String(button.dataset.resourceTab===name)));
+    homePanel.hidden=name!=='home';
     main.hidden=name!=='shop';
     coaPanel.hidden=name!=='coa';
     protocolPanel.hidden=name!=='protocol';
+    cartPanel.hidden=name!=='cart';
+    floatingCart.hidden=name!=='shop';
     if(name!=='shop'&&quick)quick.hidden=true;
+    if(name==='shop'&&typeof renderQuickList==='function')renderQuickList();
     if(name==='coa')renderCoas();
     if(name==='protocol')syncProtocol();
-    window.scrollTo({top:Math.max(0,navShell.offsetTop-10),behavior:'smooth'});
+    if(smooth)window.scrollTo({top:Math.max(0,navShell.offsetTop-8),behavior:'smooth'});
   }
-  navShell.addEventListener('click',event=>{const button=event.target.closest('[data-resource-tab]');if(button)selectTab(button.dataset.resourceTab)});
+  navShell.addEventListener('click',event=>{
+    const tab=event.target.closest('[data-resource-tab]');
+    if(tab){selectView(tab.dataset.resourceTab);return}
+    if(event.target.closest('[data-resource-cart]'))selectView('cart');
+  });
+  document.addEventListener('click',event=>{
+    if(event.target.closest('[data-resource-cart]')){event.preventDefault();selectView('cart')}
+    if(event.target.closest('[data-go-shop]')){event.preventDefault();selectView('shop')}
+  });
+
+  if(quick){
+    new MutationObserver(()=>{if(activeView!=='shop'&&!quick.hidden)quick.hidden=true}).observe(quick,{attributes:true,attributeFilter:['hidden']});
+  }
+
+  const cartCountSource=document.querySelector('#cart-count');
+  function syncCartCount(){
+    const raw=cartCountSource?.textContent||'0 items';
+    const match=raw.match(/\d+/);
+    const count=match?match[0]:'0';
+    navShell.querySelector('[data-cart-nav-count]').textContent=count;
+    floatingCart.querySelector('[data-floating-cart-count]').textContent=count;
+    floatingCart.classList.toggle('has-items',Number(count)>0);
+  }
+  if(cartCountSource)new MutationObserver(syncCartCount).observe(cartCountSource,{childList:true,subtree:true,characterData:true});
+  syncCartCount();
 
   const search=coaPanel.querySelector('#coa-library-search');
   const status=coaPanel.querySelector('#coa-library-status');
@@ -122,4 +224,5 @@
   unlock.addEventListener('click',attemptUnlock);
   input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();attemptUnlock()}});
   syncProtocol();
+  selectView('home',false);
 })();
