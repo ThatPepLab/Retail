@@ -185,19 +185,117 @@ function formatArrival(value){if(!value)return"Arrival date pending";const date=
 function refreshShoppingCategories(){const previous=categorySelect.value,names=[...new Set(shoppingProducts().map(product=>categoryFor(product.name)))].sort();categorySelect.innerHTML='<option value="all">All categories</option>'+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");categorySelect.value=names.includes(previous)?previous:"all"}
 function renderCatalog(){const selected=categorySelect.value,groups=new Map();shoppingProducts().forEach(product=>{const category=categoryFor(product.name);if(selected!=="all"&&category!==selected)return;if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});const ordered=[...categories.map(item=>item.name),"Other"];catalogGroups.innerHTML=ordered.filter(name=>groups.has(name)).map(name=>{const products=groups.get(name).sort((a,b)=>displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));return`<details class="catalog-group"><summary><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong>${escapeHtml(name)}</strong><small>${products.length} product${products.length===1?"":"s"} available</small></span><span class="category-action">View products <b aria-hidden="true">+</b></span></summary><div class="product-buttons">${products.map(catalogCard).join("")}</div></details>`}).join("")}
 function setShoppingMode(){state.shoppingMode="expert";state.shoppingModeChosen=true;state.purchaseMode="expert"}
-function renderStrengths(){if(!state.selectedProduct)return;const strengths=productStrengths(state.selectedProduct),specialOrder=isSpecialOrderProduct(state.selectedProduct.name);strengthSelect.innerHTML=strengths.map(strength=>{const quantity=stockQuantity(state.selectedProduct.name,strength),incoming=incomingInventory(state.selectedProduct.name,strength),status=specialOrder?"special order — available":quantity>0?(incoming?`${quantity} available · on the way`:`${quantity} available`):(incoming?"on the way":"coming soon");return`<option value="${escapeHtml(strength)}">${escapeHtml(strength)} — ${escapeHtml(status)}</option>`}).join("");if(!strengths.includes(state.selectedStrength))state.selectedStrength=strengths[0]||"";strengthSelect.value=state.selectedStrength}
-function chooseProduct(name,preferredStrength=""){const product=state.products.find(item=>item.name===name);if(!product||!productAvailableInShoppingMode(product))return;state.selectedProduct=product;search.value=displayProductName(product.name);suggestions.hidden=true;selectedName.textContent=displayProductName(product.name);const entry=protocolFor(product.name),educationUrl=wikiUrl(entry);downloadProductPdf.hidden=!entry;productEducation.hidden=!educationUrl;productEducation.href=educationUrl||"#";productInfo.hidden=!entry&&!educationUrl;const strengths=productStrengths(product);state.selectedStrength=strengths.includes(preferredStrength)?preferredStrength:(strengths[0]||"");state.purchaseMode="expert";state.protocolMode="starter";state.selectedProtocolDose=0;renderStrengths();renderProtocolDoseChoice(entry);selection.hidden=false;selection.closest(".finder-card")?.classList.add("product-selected");renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
+function renderStrengths(forceRecommended=false){
+  if(!state.selectedProduct)return;
+  const strengthField=strengthSelect.closest(".strength-field"),specialOrder=isSpecialOrderProduct(state.selectedProduct.name),recommendation=monthlyVialRecommendation(state.selectedProduct),strengths=recommendation.filterApplied?recommendation.strengths:productStrengths(state.selectedProduct);
+  strengthField?.classList.toggle("recommended-strength",recommendation.filterApplied);
+  const fieldLabel=strengthField?.querySelector("span");
+  if(fieldLabel)fieldLabel.textContent=recommendation.filterApplied?"Recommended vial strength for 4 weeks":"Choose available strength";
+  if(recommendation.filterApplied&&!strengths.length){
+    const minimum=formatDoseMeasure(recommendation.requirement);
+    strengthSelect.innerHTML=`<option value="">No single vial meets the ${escapeHtml(minimum)} 4-week minimum</option>`;
+    strengthSelect.disabled=true;state.selectedStrength="";updateProtocolDoseNote(protocolFor(state.selectedProduct.name));return;
+  }
+  strengthSelect.disabled=false;
+  strengthSelect.innerHTML=strengths.map((strength,index)=>{
+    const quantity=stockQuantity(state.selectedProduct.name,strength),incoming=incomingInventory(state.selectedProduct.name,strength),status=specialOrder?"special order-available":quantity>0?(incoming?`${quantity} available · on the way`:`${quantity} available`):(incoming?"on the way":"coming soon"),recommendationText=recommendation.filterApplied?(index===0?"RECOMMENDED · 4-week minimum":"4-week+ option"):"";
+    return`<option value="${escapeHtml(strength)}">${escapeHtml(strength)} — ${escapeHtml(recommendationText?recommendationText+" · "+status:status)}</option>`;
+  }).join("");
+  if(forceRecommended&&recommendation.filterApplied)state.selectedStrength=recommendation.recommended||"";
+  else if(!strengths.includes(state.selectedStrength))state.selectedStrength=strengths[0]||"";
+  strengthSelect.value=state.selectedStrength;
+  updateProtocolDoseNote(protocolFor(state.selectedProduct.name));
+}
+function chooseProduct(name,preferredStrength=""){const product=state.products.find(item=>item.name===name);if(!product||!productAvailableInShoppingMode(product))return;state.selectedProduct=product;search.value=displayProductName(product.name);suggestions.hidden=true;selectedName.textContent=displayProductName(product.name);const entry=protocolFor(product.name),educationUrl=wikiUrl(entry);downloadProductPdf.hidden=!entry;productEducation.hidden=!educationUrl;productEducation.href=educationUrl||"#";productInfo.hidden=!entry&&!educationUrl;const strengths=productStrengths(product);state.selectedStrength=strengths.includes(preferredStrength)?preferredStrength:(strengths[0]||"");state.purchaseMode="expert";state.protocolMode="starter";state.selectedProtocolDose=0;renderProtocolDoseChoice(entry);renderStrengths(true);selection.hidden=false;selection.closest(".finder-card")?.classList.add("product-selected");renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
 function pdfText(value){return String(value||"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,"")}
-function protocolDoseRecords(entry){return displayFor(entry)?.doses?.length?displayFor(entry).doses:entry.doses||[]}
-function doseText(dose){return dose.note||`${dose.value} ${dose.unit}`}
-function availableProtocolDoses(entry){return protocolDoseRecords(entry).filter(dose=>Number(dose.mg)>0)}
+function protocolDoseRecords(entry){return displayFor(entry)?.doses?.length?displayFor(entry).doses:entry?.doses||[]}
+function doseText(dose){return dose?.note||`${dose?.value} ${dose?.unit}`}
+function doseMeasure(dose){
+  if(!dose)return null;
+  const unit=String(dose.unit||"").trim().toLowerCase(),value=Number(dose.value),mg=Number(dose.mg);
+  if(/\biu\b/.test(unit)&&value>0)return{amount:value,unit:"iu"};
+  if(/mcg|µg|ug/.test(unit)&&value>0)return{amount:value/1000,unit:"mg"};
+  if((/\bmg\b/.test(unit)||mg>0)&&(mg>0||value>0))return{amount:mg>0?mg:value,unit:"mg"};
+  return null;
+}
+function strengthMeasure(strength){
+  const text=String(strength||"").trim().toLowerCase(),value=Number.parseFloat(text);
+  if(!(value>0))return null;
+  if(/iu/.test(text))return{amount:value,unit:"iu"};
+  if(/mcg|µg|ug/.test(text))return{amount:value/1000,unit:"mg"};
+  if(/mg/.test(text))return{amount:value,unit:"mg"};
+  return null;
+}
+function availableProtocolDoses(entry){return protocolDoseRecords(entry).filter(dose=>{const measure=doseMeasure(dose);return measure&&measure.amount>0})}
 function selectedPdfDose(entry){const doses=availableProtocolDoses(entry);return doses[state.protocolMode==="returning"?state.selectedProtocolDose:0]||doses[0]}
+function frequencyMultiplierFromText(value){
+  const text=String(value||"").toLowerCase();
+  if(!text)return 0;
+  if(/5\s*days?\s*on\s*[/&]\s*2\s*days?\s*off/.test(text))return 20;
+  if(/2\s*(?:to|[-–])\s*3\s*times?\s*daily/.test(text))return 56;
+  if(/once\s+or\s+twice\s+daily/.test(text))return 28;
+  if(/three\s+times?\s+daily|3\s*x\s*daily/.test(text))return 84;
+  if(/twice\s+daily|2\s*x\s*daily/.test(text))return 56;
+  if(/every\s+other\s+day/.test(text))return 14;
+  if(/split\s+across\s+three\s+administrations/.test(text)||/three\s+(?:times?|administrations?)\s+(?:per\s+)?week/.test(text)||/3\s*x\s*(?:per\s+)?week/.test(text))return 12;
+  if(/twice\s+(?:per\s+week|weekly)|2\s*x\s*(?:per\s+)?week/.test(text))return 8;
+  if(/once\s+(?:per\s+week|weekly)/.test(text))return 4;
+  if(/\bdaily\b|once\s+daily|every\s+day/.test(text))return 28;
+  if(/\bweekly\b/.test(text))return 4;
+  return 0;
+}
+function fourWeekDoseMultiplier(entry){
+  const displaySchedule=displayFor(entry)?.schedule||"",fromDisplay=frequencyMultiplierFromText(displaySchedule);
+  if(fromDisplay)return fromDisplay;
+  return frequencyMultiplierFromText(entry?.frequency||"");
+}
+function fourWeekRequirement(entry){
+  const dose=selectedPdfDose(entry),measure=doseMeasure(dose),multiplier=fourWeekDoseMultiplier(entry);
+  if(!measure||!multiplier)return null;
+  return{amount:measure.amount*multiplier,unit:measure.unit,multiplier,dose};
+}
+function formatDoseMeasure(measure){
+  if(!measure)return"";
+  const amount=Math.round((Number(measure.amount)||0)*1000)/1000;
+  return`${amount} ${measure.unit==="iu"?"IU":"mg"}`;
+}
+function monthlyVialRecommendation(product){
+  const allStrengths=productStrengths(product),entry=protocolFor(product?.name),requirement=entry?fourWeekRequirement(entry):null;
+  if(!requirement)return{filterApplied:false,strengths:allStrengths,recommended:"",requirement:null};
+  const sameUnit=allStrengths.map(strength=>({strength,measure:strengthMeasure(strength)})).filter(item=>item.measure?.unit===requirement.unit);
+  if(!sameUnit.length)return{filterApplied:false,strengths:allStrengths,recommended:"",requirement:null};
+  const qualifying=sameUnit.filter(item=>item.measure.amount+1e-9>=requirement.amount).sort((a,b)=>a.measure.amount-b.measure.amount);
+  return{filterApplied:true,strengths:qualifying.map(item=>item.strength),recommended:qualifying[0]?.strength||"",requirement};
+}
+function fourWeekMathText(requirement){
+  if(!requirement)return"";
+  const dose=doseText(requirement.dose);
+  if(requirement.multiplier===4)return`${dose}/week × 4 weeks`;
+  if(requirement.multiplier===8)return`${dose} × 2/week × 4 weeks`;
+  if(requirement.multiplier===12)return`${dose} × 3/week × 4 weeks`;
+  if(requirement.multiplier===14)return`${dose} every other day over 4 weeks`;
+  if(requirement.multiplier===20)return`${dose} × 5 days/week × 4 weeks`;
+  if(requirement.multiplier===28)return`${dose} daily × 4 weeks`;
+  if(requirement.multiplier===56)return`${dose} × 2/day × 4 weeks`;
+  if(requirement.multiplier===84)return`${dose} × 3/day × 4 weeks`;
+  return`4-week use at ${dose}`;
+}
+function updateProtocolDoseNote(entry){
+  if(!entry||protocolDoseChoice.hidden)return;
+  const chosen=selectedPdfDose(entry),recommendation=monthlyVialRecommendation(state.selectedProduct),mode=state.protocolMode==="returning"?"Maintenance":"Starter";
+  if(recommendation.filterApplied){
+    const requirement=recommendation.requirement,math=fourWeekMathText(requirement),minimum=formatDoseMeasure(requirement);
+    protocolDoseNote.textContent=recommendation.recommended?`${mode}: ${math} = ${minimum} minimum. Recommended vial: ${recommendation.recommended}. Lower strengths are hidden.`:`${mode}: ${math} = ${minimum} minimum. No single listed vial strength meets this 4-week minimum.`;
+    return;
+  }
+  protocolDoseNote.textContent=state.protocolMode==="returning"?`The protocol PDF will use ${doseText(chosen)}${chosen?.weekLabel?` (${chosen.weekLabel})`:""}.`:`Starter setup uses ${doseText(chosen)}${chosen?.weekLabel?` (${chosen.weekLabel})`:""}.`;
+}
 function isGlpProduct(name){return /semaglutide|tirzepatide|trizepatide|retatrutide|glp-?1|glp-?2|glp-?3/i.test(String(name||""))}
 function renderProtocolDoseChoice(entry){
   const doses=entry?availableProtocolDoses(entry):[];protocolDoseChoice.hidden=!doses.length;if(!doses.length)return;
   const returning=state.protocolMode==="returning",firstReturningIndex=doses.length>1?1:0;
   protocolStarter.checked=!returning;protocolReturning.checked=returning;returningDoseField.hidden=false;
-  returningDoseField.querySelector("span").textContent=returning?"Current dose (Week 2 and later)":"Week 1 dose";
+  returningDoseField.querySelector("span").textContent=returning?"Current maintenance dose":"Starter dose";
   protocolDoseSelect.disabled=!returning;
   if(returning){
     state.selectedProtocolDose=Math.max(firstReturningIndex,Math.min(state.selectedProtocolDose,doses.length-1));
@@ -207,7 +305,7 @@ function renderProtocolDoseChoice(entry){
     const dose=doses[0];protocolDoseSelect.innerHTML=`<option value="0">${escapeHtml(dose.weekLabel?`${dose.weekLabel} — ${doseText(dose)}`:`Week 1 — ${doseText(dose)}`)}</option>`;
   }
   protocolDoseSelect.value=String(state.selectedProtocolDose);
-  const chosen=selectedPdfDose(entry);protocolDoseNote.textContent=returning?`The downloaded protocol will calculate the unit draw for ${doseText(chosen)}${chosen.weekLabel?` (${chosen.weekLabel})`:""}.`:`Starter setup uses the Week 1 dose: ${doseText(chosen)}.`;
+  updateProtocolDoseNote(entry);
 }
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
@@ -266,7 +364,7 @@ function purchaseModeMarkup(){
   return '<div class="mode-inline-note"><div><strong>Choose your package</strong><span>Preparation service can be added once at checkout.</span></div></div>';
 }
 function priceCard(item,quantity){if(!item)return"";const tablet=isRetailRestockTablet(state.selectedProduct?.name),oil=isOilBasedProduct(state.selectedProduct?.name),specialOrder=tablet||oil,tiers=activeTierInfo(),modeNote=tablet?`<div class="expert-note"><strong>Special Order-Available.</strong><span>This product is offered as one sealed 100-tablet package.</span></div>`:oil?`<div class="expert-note"><strong>Special Order-Available.</strong><span>Sealed oil-based vial. Checkout preparation options do not apply to this product.</span></div>`:supportsPreparation(state.selectedProduct?.name)?`<div class="stability-note"><strong>Preparation is optional at checkout.</strong><span>Choose original sealed/unprepared, pre-mixed before delivery (+$10), or pre-mixed & ready in a Disposable Research Pen (+$20).</span></div>`:"";return`<article class="price-card">${specialOrder?'<div class="special-order-banner">Special Order-Available</div>':quantity>0?`<div class="stock-banner">In Stock · ${quantity} vial${quantity===1?"":"s"} available</div>`:""}<p class="strength-copy">${escapeHtml(item.strength)} per ${tablet?"tablet":"vial"}${coaMarkup(state.selectedProduct?.name,item.strength)}</p>${purchaseModeMarkup()}${modeNote}<fieldset class="package-options"><legend>Choose ${tablet?"package":"vial amount"}</legend>${Object.entries(tiers).map(([key,tier],index)=>{const peptidePrice=tierPeptidePrice(item,key,tier);return`<label class="tier-choice ${!specialOrder&&quantity>=tier.vials?"stock-available":""}"><input type="radio" name="package" value="${key}" ${index===0?"checked":""}><span><strong>${tier.label}</strong><small>${tier.discount}${specialOrder?" · Special order":!specialOrder&&quantity>=tier.vials?" · Available now":""}</small></span><b>${money.format(peptidePrice)}</b></label>`}).join("")}</fieldset><button type="button" class="add-button" data-add>Add Selected Package to Cart</button></article>`}
-function renderPrices(){if(!state.selectedProduct||!state.selectedStrength)return;const strengthField=strengthSelect.closest(".strength-field");if(isBacWater(state.selectedProduct.name)){strengthField.hidden=true;prices.innerHTML=`<article class="price-card automatic-supply-card"><p class="automatic-label">OPTIONAL ORDER SUPPLY</p><strong>${money.format(AUTO_BAC_PRICE)} each</strong><span>After adding a product, choose 0–10 Reconstitution/BAC Water - 0.9% benzyl alcohol vials directly in the cart.</span></article>`;return}strengthField.hidden=false;const quantity=stockQuantity(state.selectedProduct.name,state.selectedStrength);strengthSelect.classList.toggle("in-stock",quantity>0);prices.innerHTML=priceCard(highestPriceItem(state.selectedProduct,state.selectedStrength),quantity)}
+function renderPrices(){if(!state.selectedProduct)return;const strengthField=strengthSelect.closest(".strength-field");if(isBacWater(state.selectedProduct.name)){strengthField.hidden=true;prices.innerHTML=`<article class="price-card automatic-supply-card"><p class="automatic-label">OPTIONAL ORDER SUPPLY</p><strong>${money.format(AUTO_BAC_PRICE)} each</strong><span>After adding a product, choose 0–10 Reconstitution/BAC Water - 0.9% benzyl alcohol vials directly in the cart.</span></article>`;return}strengthField.hidden=false;if(!state.selectedStrength){strengthSelect.classList.remove("in-stock");prices.innerHTML='<div class="prompt"><strong>No qualifying monthly vial strength.</strong><span>Choose a different dose or contact us if the listed strengths do not cover the four-week minimum.</span></div>';return}const quantity=stockQuantity(state.selectedProduct.name,state.selectedStrength);strengthSelect.classList.toggle("in-stock",quantity>0);prices.innerHTML=priceCard(highestPriceItem(state.selectedProduct,state.selectedStrength),quantity)}
 function addToCart(){if(isBacWater(state.selectedProduct?.name))return;const source=highestPriceItem(state.selectedProduct,state.selectedStrength),choice=$("input[name=package]:checked");if(!source||!choice)return;const tier=activeTierInfo()[choice.value];if(!tier)return;const tablet=isRetailRestockTablet(state.selectedProduct.name),name=displayProductName(state.selectedProduct.name),peptidePrice=tierPeptidePrice(source,choice.value,tier),price=peptidePrice,preparable=supportsPreparation(state.selectedProduct.name),packageNote=tablet?"Sealed package":tier.discount,key=`${state.selectedProduct.name}|${source.strength}|${choice.value}`,existing=state.cart.find(item=>item.key===key);if(existing)existing.quantity++;else state.cart.push({key,name,strength:source.strength,packageLabel:tier.label,discount:packageNote,tierKey:choice.value,basePrice:peptidePrice,preparationFee:0,prepared:false,preparable,oilBased:isOilBasedProduct(state.selectedProduct.name),tablet,price,vials:tier.vials,quantity:1});renderCart();formStatus.textContent=`${name} ${source.strength}, ${tier.label}, added to the cart.`}
 function productSubtotal(){return state.cart.reduce((sum,item)=>sum+item.price*item.quantity,0)}
 function orderedVialCount(){return state.cart.reduce((sum,item)=>sum+(Number(item.vials)||1)*item.quantity,0)}
@@ -284,9 +382,9 @@ function renderCart(){const hasPreparable=cartHasPreparableProducts(),prepFields
 function downloadCartPdfFile(){if(!state.cart.length)return;if(!window.jspdf?.jsPDF){formStatus.textContent="The PDF tool is unavailable. Please refresh and try again.";return}const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter"}),margin=42,pageWidth=doc.internal.pageSize.getWidth(),pageHeight=doc.internal.pageSize.getHeight(),contentWidth=pageWidth-margin*2;let y=44;const navy=[1,30,65],orange=[230,83,0],muted=[93,107,122],line=[216,222,232];const addPageIfNeeded=height=>{if(y+height>pageHeight-48){doc.addPage();y=44}};const writeLine=(label,value,bold=false)=>{addPageIfNeeded(22);doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(10);doc.setTextColor(...navy);doc.text(pdfText(label),margin,y);doc.text(pdfText(value),pageWidth-margin,y,{align:"right"});y+=18};doc.setFillColor(...navy);doc.roundedRect(margin,y,contentWidth,60,10,10,"F");doc.setFillColor(...orange);doc.rect(margin,y,7,60,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(24);doc.text("Retail Cart",margin+20,y+38);y+=84;doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(`Created ${new Date().toLocaleString()}`,margin,y);y+=24;state.cart.forEach(item=>{addPageIfNeeded(55);doc.setDrawColor(...line);doc.line(margin,y,pageWidth-margin,y);y+=16;doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(pdfText(item.name),margin,y);doc.text(money.format(item.price*item.quantity),pageWidth-margin,y,{align:"right"});y+=15;doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(pdfText(`${item.strength} | ${item.packageLabel} | ${item.discount} | cart qty ${item.quantity}`),margin,y);y+=18});addPageIfNeeded(78);doc.setDrawColor(...line);doc.line(margin,y,pageWidth-margin,y);y+=18;if(cartNeedsBacWater()){if(state.bacQuantity>0){doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text("Reconstitution/BAC Water - 0.9% benzyl alcohol",margin,y);doc.text(money.format(bacWaterTotal()),pageWidth-margin,y,{align:"right"});y+=15;doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(pdfText(`${state.bacQuantity} vial${state.bacQuantity===1?"":"s"} | quantity discount | saved ${money.format(bacWaterDiscount())}`),margin,y)}else{doc.setTextColor(...muted);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("Reconstitution/BAC Water - 0.9% benzyl alcohol quantity: 0",margin,y)}y+=32}doc.setDrawColor(...orange);doc.line(margin,y,pageWidth-margin,y);y+=22;writeLine("Products",money.format(productSubtotal()));if(cartNeedsBacWater())writeLine(`Reconstitution/BAC Water - 0.9% benzyl alcohol (${state.bacQuantity})`,money.format(bacWaterTotal()));if(cartHasPreparableProducts())writeLine(preparationServiceLabel(),money.format(preparationServiceFee()));writeLine(fulfillmentMethod(),money.format(fulfillmentFee()));y+=4;writeLine("ORDER TOTAL",money.format(orderTotal()),true);const qrSize=78,qrTop=pageHeight-margin-qrSize;if(y>qrTop-42){doc.addPage();y=44}doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text("Order request only. Payment is not collected on this website.",pageWidth/2,qrTop-30,{align:"center"});doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("Supplies",margin+qrSize/2,qrTop-9,{align:"center"});doc.text("ReOrder",pageWidth-margin-qrSize/2,qrTop-9,{align:"center"});doc.addImage(CART_QR.supplies,"PNG",margin,qrTop,qrSize,qrSize);doc.addImage(CART_QR.reorder,"PNG",pageWidth-margin-qrSize,qrTop,qrSize,qrSize);doc.link(margin,qrTop,qrSize,qrSize,{url:CART_QR_URLS.supplies});doc.link(pageWidth-margin-qrSize,qrTop,qrSize,qrSize,{url:CART_QR_URLS.reorder});doc.save("Retail-Cart.pdf");formStatus.textContent="Cart PDF downloaded with Supplies and ReOrder QR codes."}
 
 downloadProductPdf.addEventListener("click",downloadSelectedProductPdf);downloadCartPdf.addEventListener("click",downloadCartPdfFile);
-protocolDoseChoice.addEventListener("change",event=>{if(event.target.name!=="protocol-user-type")return;state.protocolMode=event.target.value;const doses=availableProtocolDoses(protocolFor(state.selectedProduct?.name));state.selectedProtocolDose=state.protocolMode==="starter"?0:(doses.length>1?1:0);renderProtocolDoseChoice(protocolFor(state.selectedProduct?.name));renderPrices()});
-protocolDoseSelect.addEventListener("change",()=>{state.selectedProtocolDose=Number(protocolDoseSelect.value)||0;renderProtocolDoseChoice(protocolFor(state.selectedProduct?.name))});
-changeProduct?.addEventListener("click",()=>{selection.hidden=true;selection.closest(".finder-card")?.classList.remove("product-selected");search.value="";suggestions.hidden=true;search.focus();search.scrollIntoView({behavior:"smooth",block:"center"})});search.addEventListener("input",renderSuggestions);search.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();const first=matchingProducts()[0];if(first)chooseProduct(first.name)}});document.addEventListener("click",event=>{const button=event.target.closest?.("[data-product]");if(!button)return;event.preventDefault();chooseProduct(button.dataset.product,button.dataset.strength||"")});categorySelect.addEventListener("change",renderCatalog);strengthSelect.addEventListener("change",()=>{state.selectedStrength=strengthSelect.value;renderPrices()});prices.addEventListener("click",event=>{if(event.target.closest("[data-add]"))addToCart()});$(".cart-section").addEventListener("change",event=>{const select=event.target.closest("[data-bac-quantity]");if(!select)return;state.bacQuantity=Math.max(0,Math.min(10,Number(select.value)||0));renderCart();formStatus.textContent=`Reconstitution/BAC Water - 0.9% benzyl alcohol quantity set to ${state.bacQuantity}.`;});$(".cart-section").addEventListener("click",event=>{const button=event.target.closest("[data-action]");if(!button)return;const item=state.cart.find(entry=>entry.key===button.dataset.key);if(!item)return;if(button.dataset.action==="increase")item.quantity++;if(button.dataset.action==="decrease")item.quantity--;if(button.dataset.action==="remove"||item.quantity<=0)state.cart=state.cart.filter(entry=>entry.key!==item.key);renderCart()});
+protocolDoseChoice.addEventListener("change",event=>{if(event.target.name!=="protocol-user-type")return;state.protocolMode=event.target.value;const entry=protocolFor(state.selectedProduct?.name),doses=availableProtocolDoses(entry);state.selectedProtocolDose=state.protocolMode==="starter"?0:(doses.length>1?1:0);renderProtocolDoseChoice(entry);renderStrengths(true);renderPrices()});
+protocolDoseSelect.addEventListener("change",()=>{const entry=protocolFor(state.selectedProduct?.name);state.selectedProtocolDose=Number(protocolDoseSelect.value)||0;renderProtocolDoseChoice(entry);renderStrengths(true);renderPrices()});
+changeProduct?.addEventListener("click",()=>{selection.hidden=true;selection.closest(".finder-card")?.classList.remove("product-selected");search.value="";suggestions.hidden=true;search.focus();search.scrollIntoView({behavior:"smooth",block:"center"})});search.addEventListener("input",renderSuggestions);search.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();const first=matchingProducts()[0];if(first)chooseProduct(first.name)}});document.addEventListener("click",event=>{const button=event.target.closest?.("[data-product]");if(!button)return;event.preventDefault();chooseProduct(button.dataset.product,button.dataset.strength||"")});categorySelect.addEventListener("change",renderCatalog);strengthSelect.addEventListener("change",()=>{state.selectedStrength=strengthSelect.value;updateProtocolDoseNote(protocolFor(state.selectedProduct?.name));renderPrices()});prices.addEventListener("click",event=>{if(event.target.closest("[data-add]"))addToCart()});$(".cart-section").addEventListener("change",event=>{const select=event.target.closest("[data-bac-quantity]");if(!select)return;state.bacQuantity=Math.max(0,Math.min(10,Number(select.value)||0));renderCart();formStatus.textContent=`Reconstitution/BAC Water - 0.9% benzyl alcohol quantity set to ${state.bacQuantity}.`;});$(".cart-section").addEventListener("click",event=>{const button=event.target.closest("[data-action]");if(!button)return;const item=state.cart.find(entry=>entry.key===button.dataset.key);if(!item)return;if(button.dataset.action==="increase")item.quantity++;if(button.dataset.action==="decrease")item.quantity--;if(button.dataset.action==="remove"||item.quantity<=0)state.cart=state.cart.filter(entry=>entry.key!==item.key);renderCart()});
 orderForm.addEventListener("change",event=>{if(event.target.name==="fulfillment")renderCart();if(event.target.name==="preparation"){state.preparationService=event.target.value;renderCart();formStatus.textContent=`Preparation option set to ${preparationServiceLabel()}.`}});
 orderForm.addEventListener("submit",async event=>{event.preventDefault();if(!state.cart.length)return;submitOrder.disabled=true;submitOrder.textContent="Sending…";formStatus.textContent="Submitting your order request…";try{const response=await fetch(orderForm.action,{method:"POST",body:new FormData(orderForm),headers:{Accept:"application/json"}});if(!response.ok)throw new Error("Submission failed");state.cart=[];state.bacQuantity=0;state.preparationService="none";orderForm.reset();renderCart();formStatus.textContent="Order request sent. We will contact you to confirm availability and payment."}catch{formStatus.textContent="The order request could not be sent. Please check your information and try again."}finally{submitOrder.textContent="Submit Order Request";submitOrder.disabled=!state.cart.length}});
 async function fetchInventoryEntries(){const stamp=Date.now(),sources=[`https://raw.githubusercontent.com/ThatPepLab/InStock/main/inventory.json?updated=${stamp}`,`inventory.json?updated=${stamp}`];for(const source of sources){try{const response=await fetch(source,{cache:"no-store"});if(response.ok)return await response.json()}catch(error){console.warn("Inventory source failed",source,error)}}throw new Error("Inventory unavailable")}function inventoryEntryFeedsRetail(entry){const name=String(entry?.product||"").trim();if(entry?.internalOnly===true)return false;if(isOilBasedProduct(name))return false;if(TABLET_PRODUCT_PATTERN.test(name)||RETAIL_RESTOCK_TABLET_PATTERN.test(name))return false;return true}async function refreshInventory(){try{const entries=await fetchInventoryEntries(),next=new Map(),incoming=new Map();for(const entry of Array.isArray(entries)?entries:[]){if(!entry.product||!entry.strength||!inventoryEntryFeedsRetail(entry))continue;const key=stockKey(entry.product,entry.strength),quantity=Math.max(0,Math.floor(Number(entry.quantity)||0));if(quantity>0)next.set(key,quantity);if(entry.moreOnWay===true)incoming.set(key,{incomingQuantity:Math.max(0,Math.floor(Number(entry.incomingQuantity)||0)),expectedArrival:String(entry.expectedArrival||"").trim()})}state.inventory=next;state.incoming=incoming;state.inventoryLoaded=true;renderCatalog();renderSuggestions();if(state.selectedProduct){renderStrengths();renderPrices()}}catch(error){state.inventoryLoaded=true;console.warn("Inventory check failed",error)}}
