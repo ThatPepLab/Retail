@@ -78,8 +78,12 @@ function productItems(product){if(Array.isArray(product?.items))return product.i
 function productInStock(product){return productStrengths(product).some(strength=>stockQuantity(product.name,strength)>0)}
 function retailStrengthAllowed(productName,strength){const name=String(productName||"").trim(),amount=strengthNumber(strength);if(/^glp-?3rt$|^retatrutide$/i.test(name))return amount<=40;if(/^glp-?2(?:tr|tz)?$|^tirzepatide$|^trizepatide$/i.test(name))return amount<=60;return true}
 function productStrengths(product){if(isBacWater(product?.name))return["Choose quantity in cart"];return[...new Set(productItems(product).map(item=>item.strength).filter(strength=>strength&&retailStrengthAllowed(product?.name,strength)))].sort((a,b)=>strengthNumber(a)-strengthNumber(b))}
+function inStockStrengths(product){return productStrengths(product).filter(strength=>strength!=="Choose quantity in cart"&&stockQuantity(product.name,strength)>0)}
 function highestPriceItem(product,strength){const candidates=productItems(product).filter(item=>item.strength===strength);if(!candidates.length)return null;return{strength,restocksQuickly:candidates.some(item=>item.restocksQuickly),retail:Object.fromEntries([...new Set([...Object.keys(expertTierInfo),"one"])].map(key=>[key,Math.max(...candidates.map(item=>Number(item.retail?.[key])||0))]))}}
-function productAvailableInShoppingMode(){return true}
+const CURATED_BESTSELLERS=new Set(["glp-3rt","tirzepatide","wolverine","hgh 191aa","tesamorelin","mots-c","ss-31","selank","semax","ghk-cu"]);
+const curatedProductKey=name=>String(name||"").trim().toLowerCase();
+function isCuratedBestseller(product){return CURATED_BESTSELLERS.has(curatedProductKey(product?.name))}
+function productAvailableInShoppingMode(product){return isCuratedBestseller(product)&&inStockStrengths(product).length>0}
 function shoppingProducts(){return state.products.filter(productAvailableInShoppingMode)}
 function matchingProducts(){const query=search.value.trim().toLowerCase();return query?shoppingProducts().filter(product=>product.name.toLowerCase().includes(query)||displayProductName(product.name).toLowerCase().includes(query)).slice(0,12):[]}
 function stockChip(product){return productInStock(product)?'<span class="stock-chip">IN STOCK</span>':""}
@@ -147,27 +151,18 @@ function catalogDescription(product){
   return catalogUseDescriptions.find(([pattern])=>pattern.test(product.name))?.[1]||catalogFallbacks[categoryFor(product.name)]||"A research product available in multiple strength options.";
 }
 function catalogCoaMarkup(product){
-  const strengths=productStrengths(product);
-  const ordered=[...strengths.filter(strength=>stockQuantity(product.name,strength)>0),...strengths.filter(strength=>stockQuantity(product.name,strength)<=0)];
-  for(const strength of ordered){const markup=window.COARegistry?.markup(product.name,strength)||"";if(markup)return `<div class="catalog-coa"><span>${escapeHtml(strength)}</span>${markup}</div>`}
+  for(const strength of inStockStrengths(product)){const markup=window.COARegistry?.markup(product.name,strength)||"";if(markup)return `<div class="catalog-coa"><span>${escapeHtml(strength)}</span>${markup}</div>`}
   return "";
 }
 function catalogInventoryMarkup(product){
-  if(isSpecialOrderProduct(product.name))return '<div class="catalog-special-order">SPECIAL ORDER-AVAILABLE</div>';
-  return productStrengths(product).filter(strength=>{
-    if(strength==="Choose quantity in cart")return false;
-    return stockQuantity(product.name,strength)>0||Boolean(incomingInventory(product.name,strength));
-  }).map(strength=>{
-    const quantity=stockQuantity(product.name,strength),incoming=incomingInventory(product.name,strength);
-    const status=quantity>0?(incoming?`${quantity} AVAILABLE · ON THE WAY`:`${quantity} AVAILABLE`):"ON THE WAY";
-    const statusClass=quantity>0?(incoming?"is-available is-on-way":"is-available"):"is-on-way";
-    const detail=incoming?.expectedArrival?`<small>${escapeHtml(formatArrival(incoming.expectedArrival))}</small>`:"";
-    return `<div class="catalog-inventory-row ${statusClass}"><span>${escapeHtml(strength)}</span><strong>${status}</strong>${detail}</div>`;
+  return inStockStrengths(product).map(strength=>{
+    const quantity=stockQuantity(product.name,strength);
+    return `<div class="catalog-inventory-row is-available"><span>${escapeHtml(strength)}</span><strong>${quantity} AVAILABLE</strong></div>`;
   }).join("");
 }
 function catalogCard(product){
-  const name=displayProductName(product.name),specialOrder=isSpecialOrderProduct(product.name),inStock=!specialOrder&&productInStock(product),onWay=!specialOrder&&!inStock&&productStrengths(product).some(strength=>incomingInventory(product.name,strength)),longName=name.length>18?" long-name":"";
-  return `<article class="catalog-product-card ${specialOrder?"special-order":inStock?"in-stock":onWay?"on-the-way":""}">
+  const name=displayProductName(product.name),inStock=productInStock(product),longName=name.length>18?" long-name":"";
+  return `<article class="catalog-product-card ${inStock?"in-stock":""}">
     <button type="button" class="catalog-card-main" data-product="${escapeHtml(product.name)}">
       <div class="catalog-vial">
         <img src="assets/retail-vial-template.webp" alt="${escapeHtml(name)} branded research vial" loading="lazy" width="500" height="500">
@@ -182,12 +177,22 @@ function catalogCard(product){
 }
 function renderSuggestions(){const matches=matchingProducts();suggestions.hidden=!matches.length;suggestions.innerHTML=matches.map(product=>`<button type="button" class="${productInStock(product)?"in-stock":""}" data-product="${escapeHtml(product.name)}">${escapeHtml(displayProductName(product.name))}${stockChip(product)}</button>`).join("")}
 function formatArrival(value){if(!value)return"Arrival date pending";const date=new Date(`${value}T12:00:00`);return Number.isNaN(date.getTime())?String(value):`Expected ${new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(date)}`}
-function refreshShoppingCategories(){const previous=categorySelect.value,names=[...new Set(shoppingProducts().map(product=>categoryFor(product.name)))].sort();categorySelect.innerHTML='<option value="all">All categories</option>'+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");categorySelect.value=names.includes(previous)?previous:"all"}
-function renderCatalog(){const selected=categorySelect.value,groups=new Map();shoppingProducts().forEach(product=>{const category=categoryFor(product.name);if(selected!=="all"&&category!==selected)return;if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});const ordered=[...categories.map(item=>item.name),"Other"];catalogGroups.innerHTML=ordered.filter(name=>groups.has(name)).map(name=>{const products=groups.get(name).sort((a,b)=>displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));return`<details class="catalog-group"><summary><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong>${escapeHtml(name)}</strong><small>${products.length} product${products.length===1?"":"s"} available</small></span><span class="category-action">View products <b aria-hidden="true">+</b></span></summary><div class="product-buttons">${products.map(catalogCard).join("")}</div></details>`}).join("")}
+function retailCategoryNames(){return categories.filter(item=>item.name!=="Supplies").map(item=>item.name)}
+function refreshShoppingCategories(){const previous=categorySelect.value,names=retailCategoryNames();categorySelect.innerHTML='<option value="all">All categories</option>'+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");categorySelect.value=names.includes(previous)?previous:"all"}
+function renderCatalog(){
+  const selected=categorySelect.value,groups=new Map();
+  shoppingProducts().forEach(product=>{const category=categoryFor(product.name);if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});
+  const ordered=retailCategoryNames().filter(name=>selected==="all"||name===selected);
+  catalogGroups.innerHTML=ordered.map(name=>{
+    const products=(groups.get(name)||[]).sort((a,b)=>displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));
+    const body=products.length?`<div class="product-buttons">${products.map(catalogCard).join("")}</div>`:`<div class="catalog-empty-category"><strong>No featured in-stock item in this category right now.</strong><span>Looking for something specific?</span><button type="button" data-go-request>Request a peptide or strength</button></div>`;
+    return`<details class="catalog-group"><summary><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong>${escapeHtml(name)}</strong><small>${products.length?products.length+" featured in-stock product"+(products.length===1?"":"s"):"Request available"}</small></span><span class="category-action">View <b aria-hidden="true">+</b></span></summary>${body}</details>`;
+  }).join("");
+}
 function setShoppingMode(){state.shoppingMode="expert";state.shoppingModeChosen=true;state.purchaseMode="expert"}
 function renderStrengths(forceRecommended=false){
   if(!state.selectedProduct)return;
-  const strengthField=strengthSelect.closest(".strength-field"),specialOrder=isSpecialOrderProduct(state.selectedProduct.name),recommendation=monthlyVialRecommendation(state.selectedProduct),strengths=recommendation.filterApplied?recommendation.strengths:productStrengths(state.selectedProduct);
+  const strengthField=strengthSelect.closest(".strength-field"),recommendation=monthlyVialRecommendation(state.selectedProduct),strengths=recommendation.filterApplied?recommendation.strengths:inStockStrengths(state.selectedProduct);
   strengthField?.classList.toggle("recommended-strength",recommendation.filterApplied);
   const fieldLabel=strengthField?.querySelector("span");
   if(fieldLabel)fieldLabel.textContent=recommendation.filterApplied?"Recommended vial strength for 4 weeks":"Choose available strength";
@@ -198,7 +203,7 @@ function renderStrengths(forceRecommended=false){
   }
   strengthSelect.disabled=false;
   strengthSelect.innerHTML=strengths.map((strength,index)=>{
-    const quantity=stockQuantity(state.selectedProduct.name,strength),incoming=incomingInventory(state.selectedProduct.name,strength),status=specialOrder?"special order-available":quantity>0?(incoming?`${quantity} available · on the way`:`${quantity} available`):(incoming?"on the way":"coming soon"),recommendationText=recommendation.filterApplied?(index===0?"RECOMMENDED · 4-week minimum":"4-week+ option"):"";
+    const quantity=stockQuantity(state.selectedProduct.name,strength),status=`${quantity} available`,recommendationText=recommendation.filterApplied?(index===0?"RECOMMENDED · 4-week minimum":"4-week+ option"):"";
     return`<option value="${escapeHtml(strength)}">${escapeHtml(strength)} — ${escapeHtml(recommendationText?recommendationText+" · "+status:status)}</option>`;
   }).join("");
   if(forceRecommended&&recommendation.filterApplied)state.selectedStrength=recommendation.recommended||"";
@@ -206,7 +211,7 @@ function renderStrengths(forceRecommended=false){
   strengthSelect.value=state.selectedStrength;
   updateProtocolDoseNote(protocolFor(state.selectedProduct.name));
 }
-function chooseProduct(name,preferredStrength=""){const product=state.products.find(item=>item.name===name);if(!product||!productAvailableInShoppingMode(product))return;state.selectedProduct=product;search.value=displayProductName(product.name);suggestions.hidden=true;selectedName.textContent=displayProductName(product.name);const entry=protocolFor(product.name),educationUrl=wikiUrl(entry);downloadProductPdf.hidden=!entry;productEducation.hidden=!educationUrl;productEducation.href=educationUrl||"#";productInfo.hidden=!entry&&!educationUrl;const strengths=productStrengths(product);state.selectedStrength=strengths.includes(preferredStrength)?preferredStrength:(strengths[0]||"");state.purchaseMode="expert";state.protocolMode="starter";state.selectedProtocolDose=0;renderProtocolDoseChoice(entry);renderStrengths(true);selection.hidden=false;selection.closest(".finder-card")?.classList.add("product-selected");renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
+function chooseProduct(name,preferredStrength=""){const product=state.products.find(item=>item.name===name);if(!product||!productAvailableInShoppingMode(product))return;state.selectedProduct=product;search.value=displayProductName(product.name);suggestions.hidden=true;selectedName.textContent=displayProductName(product.name);const entry=protocolFor(product.name),educationUrl=wikiUrl(entry);downloadProductPdf.hidden=!entry;productEducation.hidden=!educationUrl;productEducation.href=educationUrl||"#";productInfo.hidden=!entry&&!educationUrl;const strengths=inStockStrengths(product);state.selectedStrength=strengths.includes(preferredStrength)?preferredStrength:(strengths[0]||"");state.purchaseMode="expert";state.protocolMode="starter";state.selectedProtocolDose=0;renderProtocolDoseChoice(entry);renderStrengths(true);selection.hidden=false;selection.closest(".finder-card")?.classList.add("product-selected");renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
 function pdfText(value){return String(value||"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,"")}
 function protocolDoseRecords(entry){return displayFor(entry)?.doses?.length?displayFor(entry).doses:entry?.doses||[]}
 function doseText(dose){return dose?.note||`${dose?.value} ${dose?.unit}`}
@@ -260,7 +265,7 @@ function formatDoseMeasure(measure){
   return`${amount} ${measure.unit==="iu"?"IU":"mg"}`;
 }
 function monthlyVialRecommendation(product){
-  const allStrengths=productStrengths(product),entry=protocolFor(product?.name),requirement=entry?fourWeekRequirement(entry):null;
+  const allStrengths=inStockStrengths(product),entry=protocolFor(product?.name),requirement=entry?fourWeekRequirement(entry):null;
   if(!requirement)return{filterApplied:false,strengths:allStrengths,recommended:"",requirement:null};
   const sameUnit=allStrengths.map(strength=>({strength,measure:strengthMeasure(strength)})).filter(item=>item.measure?.unit===requirement.unit);
   if(!sameUnit.length)return{filterApplied:false,strengths:allStrengths,recommended:"",requirement:null};
@@ -382,6 +387,6 @@ protocolDoseChoice.addEventListener("change",event=>{if(event.target.name!=="pro
 changeProduct?.addEventListener("click",()=>{selection.hidden=true;selection.closest(".finder-card")?.classList.remove("product-selected");search.value="";suggestions.hidden=true;search.focus();search.scrollIntoView({behavior:"smooth",block:"center"})});search.addEventListener("input",renderSuggestions);search.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();const first=matchingProducts()[0];if(first)chooseProduct(first.name)}});document.addEventListener("click",event=>{const button=event.target.closest?.("[data-product]");if(!button)return;event.preventDefault();chooseProduct(button.dataset.product,button.dataset.strength||"")});categorySelect.addEventListener("change",renderCatalog);strengthSelect.addEventListener("change",()=>{state.selectedStrength=strengthSelect.value;updateProtocolDoseNote(protocolFor(state.selectedProduct?.name));renderPrices()});prices.addEventListener("click",event=>{if(event.target.closest("[data-add]"))addToCart()});$(".cart-section").addEventListener("change",event=>{const select=event.target.closest("[data-bac-quantity]");if(!select)return;state.bacQuantity=Math.max(0,Math.min(10,Number(select.value)||0));renderCart();formStatus.textContent=`Reconstitution/BAC Water - 0.9% benzyl alcohol quantity set to ${state.bacQuantity}.`;});$(".cart-section").addEventListener("click",event=>{const button=event.target.closest("[data-action]");if(!button)return;const item=state.cart.find(entry=>entry.key===button.dataset.key);if(!item)return;if(button.dataset.action==="increase")item.quantity++;if(button.dataset.action==="decrease")item.quantity--;if(button.dataset.action==="remove"||item.quantity<=0)state.cart=state.cart.filter(entry=>entry.key!==item.key);renderCart()});
 orderForm.addEventListener("change",event=>{if(event.target.name==="fulfillment")renderCart();if(event.target.name==="preparation"){state.preparationService=event.target.value;renderCart();formStatus.textContent=`Preparation option set to ${preparationServiceLabel()}.`}});
 orderForm.addEventListener("submit",async event=>{event.preventDefault();if(!state.cart.length)return;submitOrder.disabled=true;submitOrder.textContent="Sending…";formStatus.textContent="Submitting your order request…";try{const response=await fetch(orderForm.action,{method:"POST",body:new FormData(orderForm),headers:{Accept:"application/json"}});if(!response.ok)throw new Error("Submission failed");state.cart=[];state.bacQuantity=0;state.preparationService="none";orderForm.reset();renderCart();formStatus.textContent="Order request sent. We will contact you to confirm availability and payment."}catch{formStatus.textContent="The order request could not be sent. Please check your information and try again."}finally{submitOrder.textContent="Submit Order Request";submitOrder.disabled=!state.cart.length}});
-async function fetchInventoryEntries(){const stamp=Date.now(),sources=[`https://raw.githubusercontent.com/ThatPepLab/InStock/main/inventory.json?updated=${stamp}`,`inventory.json?updated=${stamp}`];for(const source of sources){try{const response=await fetch(source,{cache:"no-store"});if(response.ok)return await response.json()}catch(error){console.warn("Inventory source failed",source,error)}}throw new Error("Inventory unavailable")}function inventoryEntryFeedsRetail(entry){const name=String(entry?.product||"").trim();if(entry?.internalOnly===true)return false;if(isOilBasedProduct(name))return false;if(TABLET_PRODUCT_PATTERN.test(name)||RETAIL_RESTOCK_TABLET_PATTERN.test(name))return false;return true}async function refreshInventory(){try{const entries=await fetchInventoryEntries(),next=new Map(),incoming=new Map();for(const entry of Array.isArray(entries)?entries:[]){if(!entry.product||!entry.strength||!inventoryEntryFeedsRetail(entry))continue;const key=stockKey(entry.product,entry.strength),quantity=Math.max(0,Math.floor(Number(entry.quantity)||0));if(quantity>0)next.set(key,quantity);if(entry.moreOnWay===true)incoming.set(key,{incomingQuantity:Math.max(0,Math.floor(Number(entry.incomingQuantity)||0)),expectedArrival:String(entry.expectedArrival||"").trim()})}state.inventory=next;state.incoming=incoming;state.inventoryLoaded=true;renderCatalog();renderSuggestions();if(state.selectedProduct){renderStrengths();renderPrices()}}catch(error){state.inventoryLoaded=true;console.warn("Inventory check failed",error)}}
+async function fetchInventoryEntries(){const stamp=Date.now(),sources=[`https://raw.githubusercontent.com/ThatPepLab/InStock/main/inventory.json?updated=${stamp}`,`inventory.json?updated=${stamp}`];for(const source of sources){try{const response=await fetch(source,{cache:"no-store"});if(response.ok)return await response.json()}catch(error){console.warn("Inventory source failed",source,error)}}throw new Error("Inventory unavailable")}function inventoryEntryFeedsRetail(entry){const name=String(entry?.product||"").trim();if(entry?.internalOnly===true)return false;if(isOilBasedProduct(name))return false;if(TABLET_PRODUCT_PATTERN.test(name)||RETAIL_RESTOCK_TABLET_PATTERN.test(name))return false;return true}async function refreshInventory(){try{const entries=await fetchInventoryEntries(),next=new Map(),incoming=new Map();for(const entry of Array.isArray(entries)?entries:[]){if(!entry.product||!entry.strength||!inventoryEntryFeedsRetail(entry))continue;const key=stockKey(entry.product,entry.strength),quantity=Math.max(0,Math.floor(Number(entry.quantity)||0));if(quantity>0)next.set(key,quantity);if(entry.moreOnWay===true)incoming.set(key,{incomingQuantity:Math.max(0,Math.floor(Number(entry.incomingQuantity)||0)),expectedArrival:String(entry.expectedArrival||"").trim()})}state.inventory=next;state.incoming=incoming;state.inventoryLoaded=true;refreshShoppingCategories();renderCatalog();renderSuggestions();if(state.selectedProduct){if(!productAvailableInShoppingMode(state.selectedProduct)){selection.hidden=true;state.selectedProduct=null;state.selectedStrength="";}else{renderStrengths();renderPrices()}}}catch(error){state.inventoryLoaded=true;console.warn("Inventory check failed",error)}}
 fetch(`/Wholesale/catalog-data.json?updated=${Date.now()}`,{cache:"no-store"}).then(response=>{if(!response.ok)throw new Error("Catalog unavailable");return response.json()}).then(products=>{state.products=products.filter(visibleRetailProduct);state.catalogLoaded=true;refreshShoppingCategories();renderCatalog()}).catch(()=>{catalogGroups.innerHTML='<div class="prompt"><strong>Catalog unavailable.</strong><span>Please refresh the page.</span></div>'});refreshInventory();setInterval(refreshInventory,300000);renderCart();
 document.addEventListener("coa-data-updated",()=>{renderCatalog();if(state.selectedProduct)renderPrices()});
