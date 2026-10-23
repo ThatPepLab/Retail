@@ -124,3 +124,9 @@
 .preparation-choice strong{font-size:15px;color:var(--navy)}
 .preparation-choice small{color:var(--muted);font-size:12px;line-height:1.4}
 .preparation-choice em{margin-top:3px;color:var(--orange);font-size:13px;font-style:normal;font-weight:900}
+
+.catalog-empty-category{display:grid;gap:7px;justify-items:start;padding:20px;border:2px dashed var(--line);border-radius:13px;background:#f8fafc;color:var(--muted)}
+.catalog-empty-category strong{color:var(--navy);font-size:16px}
+.catalog-empty-category span{font-size:12px}
+.catalog-empty-category button{min-height:40px;border:2px solid var(--orange);border-radius:9px;background:#fff;color:var(--navy);padding:8px 13px;font-weight:900;cursor:pointer}
+.catalog-empty-category button:hover,.catalog-empty-category button:focus-visible{background:#fff4ea;outline:0}
