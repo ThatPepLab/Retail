@@ -23,15 +23,15 @@
       <div class="home-brand-copy">
         <p class="home-kicker">THAT PEP LAB</p>
         <h2>Shop what we have. Request what you need.</h2>
-        <p>Our Shop is intentionally curated around the products and strengths we actually have available. If you need something different, send us a peptide or strength request.</p>
-        <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop In-Stock Picks</button><button type="button" class="home-request-button" data-go-request>Request a Peptide or Strength</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
+        <p>Our Shop is intentionally curated around the products and strengths we actively carry. Each strength shows whether it is available now, on the way, coming soon, or request-only. If you need something different, send us a peptide or strength request.</p>
+        <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop Featured Products</button><button type="button" class="home-request-button" data-go-request>Request a Peptide or Strength</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
       </div>
       <div class="home-logo-crop" aria-label="That Pep Lab logo"><img src="${window.RetailBrandLogo||''}" alt="That Pep Lab"></div>
     </div>
     <section class="difference-section" aria-labelledby="different-title">
       <div class="difference-heading"><p>HOW WE ARE DIFFERENT</p><h2 id="different-title">Built around the way we actually research.</h2></div>
       <div class="difference-grid">
-        <article><strong>Curated in-stock selection</strong><span>The Shop focuses on our best-selling research products and only the strengths currently recorded on hand.</span></article>
+        <article><strong>Curated in-stock selection</strong><span>The Shop focuses on our best-selling research products and the strengths we actively carry, with live status for Available, On The Way, Coming Soon, or Request.</span></article>
         <article><strong>Request something specific</strong><span>If the peptide or strength you want is not shown, use the Request tab and tell us exactly what you are looking for.</span></article>
         <article><strong>Products sold are personally researched in our lab</strong><span>Products we sell are selected through our own research process, with available COAs and testing information kept alongside the catalog.</span></article>
       </div>
