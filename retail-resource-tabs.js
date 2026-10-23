@@ -11,7 +11,7 @@
 
   const navShell=document.createElement('div');
   navShell.className='resource-nav-shell';
-  navShell.innerHTML='<nav class="resource-nav" aria-label="Retail resources"><button class="resource-tab" type="button" data-resource-tab="home" aria-selected="true">Home</button><button class="resource-tab" type="button" data-resource-tab="shop" aria-selected="false">Shop</button><button class="resource-tab" type="button" data-resource-tab="coa" aria-selected="false">COA Library</button><button class="resource-tab" type="button" data-resource-tab="protocol" aria-selected="false">Protocol</button><button class="resource-cart-button" type="button" data-resource-cart>Go to Cart · <span data-cart-nav-count>0</span></button></nav>';
+  navShell.innerHTML='<nav class="resource-nav" aria-label="Retail resources"><button class="resource-tab" type="button" data-resource-tab="home" aria-selected="true">Home</button><button class="resource-tab" type="button" data-resource-tab="shop" aria-selected="false">Shop</button><button class="resource-tab" type="button" data-resource-tab="request" aria-selected="false">Request</button><button class="resource-tab" type="button" data-resource-tab="coa" aria-selected="false">COA Library</button><button class="resource-tab" type="button" data-resource-tab="protocol" aria-selected="false">Protocol</button><button class="resource-cart-button" type="button" data-resource-cart>Go to Cart · <span data-cart-nav-count>0</span></button></nav>';
   const trust=document.querySelector('.retail-trust-strip');
   if(trust)trust.after(navShell);else if(hero)hero.after(navShell);else main.before(navShell);
 
@@ -22,17 +22,17 @@
     <div class="home-brand-card">
       <div class="home-brand-copy">
         <p class="home-kicker">THAT PEP LAB</p>
-        <h2>Research-focused products with help when you need it.</h2>
-        <p>Browse what we offer, review available testing, and order the amount that makes sense for your research.</p>
-        <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop Products</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
+        <h2>Shop what we have. Request what you need.</h2>
+        <p>Our Shop is intentionally curated around the products and strengths we actually have available. If you need something different, send us a peptide or strength request.</p>
+        <div class="home-actions"><button type="button" class="home-shop-button" data-go-shop>Shop In-Stock Picks</button><button type="button" class="home-request-button" data-go-request>Request a Peptide or Strength</button><a href="${GROUP_URL}" target="_blank" rel="noopener noreferrer" class="home-whatsapp-button">Join Our WhatsApp Group</a></div>
       </div>
       <div class="home-logo-crop" aria-label="That Pep Lab logo"><img src="${window.RetailBrandLogo||''}" alt="That Pep Lab"></div>
     </div>
     <section class="difference-section" aria-labelledby="different-title">
       <div class="difference-heading"><p>HOW WE ARE DIFFERENT</p><h2 id="different-title">Built around the way we actually research.</h2></div>
       <div class="difference-grid">
-        <article><strong>Order what you need</strong><span>Choose the product, strength, and package that fits your research instead of being forced into a preset experience level.</span></article>
-        <article><strong>Help when you need it</strong><span>Use the site, our order form, or WhatsApp when you need help with an order or product information.</span></article>
+        <article><strong>Curated in-stock selection</strong><span>The Shop focuses on our best-selling research products and only the strengths currently recorded on hand.</span></article>
+        <article><strong>Request something specific</strong><span>If the peptide or strength you want is not shown, use the Request tab and tell us exactly what you are looking for.</span></article>
         <article><strong>Products sold are personally researched in our lab</strong><span>Products we sell are selected through our own research process, with available COAs and testing information kept alongside the catalog.</span></article>
       </div>
     </section>
@@ -46,6 +46,28 @@
       </div>
     </section>
     <div class="home-faq-slot"></div>`;
+
+  const requestPanel=document.createElement('section');
+  requestPanel.className='resource-panel';
+  requestPanel.dataset.resourcePanel='request';
+  requestPanel.hidden=true;
+  requestPanel.innerHTML=`
+    <div class="resource-card request-card">
+      <div class="resource-heading"><div><p>SPECIAL REQUEST</p><h2>Request a Specific Peptide or Strength</h2></div><span>Do not see what you need in the Shop? Tell us the exact peptide, strength, or format you are looking for. This is a request for availability—not a completed order.</span></div>
+      <form id="special-request-form" class="special-request-form" action="https://formspree.io/f/mzepdzel" method="POST">
+        <input type="hidden" name="request_type" value="Specific Peptide or Strength Request">
+        <div class="request-fields">
+          <label><span>Name</span><input name="customer_name" autocomplete="name" required></label>
+          <label><span>Email</span><input type="email" name="email" autocomplete="email" required></label>
+          <label><span>Phone</span><input type="tel" name="phone" autocomplete="tel"></label>
+          <label><span>Peptide / product</span><input name="requested_product" placeholder="Example: GLP-3RT, Wolverine, 191AA…" required></label>
+          <label><span>Requested strength</span><input name="requested_strength" placeholder="Example: 40mg, 36 IU, 10mg"></label>
+          <label class="request-notes"><span>Anything else we should know?</span><textarea name="request_notes" rows="4" placeholder="Quantity, preferred strength, format, or other details"></textarea></label>
+        </div>
+        <div class="request-submit-row"><div><strong>Not listed does not mean unavailable.</strong><span>We will review the request and contact you about availability and pricing.</span></div><button type="submit">Send Request</button></div>
+        <p id="special-request-status" class="request-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>`;
 
   const coaPanel=document.createElement('section');
   coaPanel.className='resource-panel';
@@ -101,7 +123,7 @@
     </div>`;
 
   main.before(homePanel);
-  main.after(coaPanel,protocolPanel,cartPanel);
+  main.after(requestPanel,coaPanel,protocolPanel,cartPanel);
 
   const faq=main.querySelector('.research-faq');
   if(faq)homePanel.querySelector('.home-faq-slot')?.append(faq);
@@ -126,6 +148,7 @@
     buttons.forEach(button=>button.setAttribute('aria-selected',String(button.dataset.resourceTab===name)));
     homePanel.hidden=name!=='home';
     main.hidden=name!=='shop';
+    requestPanel.hidden=name!=='request';
     coaPanel.hidden=name!=='coa';
     protocolPanel.hidden=name!=='protocol';
     cartPanel.hidden=name!=='cart';
@@ -144,6 +167,26 @@
   document.addEventListener('click',event=>{
     if(event.target.closest('[data-resource-cart]')){event.preventDefault();selectView('cart')}
     if(event.target.closest('[data-go-shop]')){event.preventDefault();selectView('shop')}
+    if(event.target.closest('[data-go-request]')){event.preventDefault();selectView('request')}
+  });
+
+  const requestForm=requestPanel.querySelector('#special-request-form');
+  const requestStatus=requestPanel.querySelector('#special-request-status');
+  requestForm?.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const button=requestForm.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.textContent='Sending…'}
+    requestStatus.textContent='Sending your request…';
+    try{
+      const response=await fetch(requestForm.action,{method:'POST',body:new FormData(requestForm),headers:{Accept:'application/json'}});
+      if(!response.ok)throw new Error('Request failed');
+      requestForm.reset();
+      requestStatus.textContent='Request sent. We will contact you after checking availability and pricing.';
+    }catch(error){
+      requestStatus.textContent='The request could not be sent. Please check your information and try again.';
+    }finally{
+      if(button){button.disabled=false;button.textContent='Send Request'}
+    }
   });
 
   if(quick){
