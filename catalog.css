@@ -130,3 +130,19 @@
 .catalog-empty-category span{font-size:12px}
 .catalog-empty-category button{min-height:40px;border:2px solid var(--orange);border-radius:9px;background:#fff;color:var(--navy);padding:8px 13px;font-weight:900;cursor:pointer}
 .catalog-empty-category button:hover,.catalog-empty-category button:focus-visible{background:#fff4ea;outline:0}
+
+.catalog-inventory-row.is-on-the-way{border-style:dashed;border-width:2px;background:#f4f7fb}
+.catalog-inventory-row.is-on-the-way strong:before{content:"→ ";font-weight:950}
+.catalog-inventory-row.is-coming-soon{border-style:dashed;background:#f8fafc}
+.catalog-inventory-row.is-coming-soon strong:before{content:"○ ";font-weight:950}
+.catalog-inventory-row.is-request{background:#fff;border-style:dotted;border-width:2px}
+.catalog-inventory-row.is-request strong:before{content:"? ";font-weight:950}
+.catalog-product-card.coming-soon,.catalog-product-card.request-only{border-style:dashed}
+.unavailable-price-card{display:grid;gap:14px}
+.unavailable-stock-banner{padding:10px 14px;border-radius:10px;background:#f4f7fb;color:var(--navy);font-size:12px;font-weight:950;letter-spacing:.05em;text-align:center}
+.unavailable-stock-banner.is-on-the-way{border:2px dashed var(--navy)}
+.unavailable-stock-banner.is-coming-soon{border:2px dashed #8795aa}
+.unavailable-stock-banner.is-request{border:2px dotted var(--orange);background:#fff8f1}
+.unavailable-stock-copy{display:grid;gap:5px;color:var(--muted);font-size:13px}
+.unavailable-stock-copy strong{color:var(--navy);font-size:16px}
+.request-strength-button{margin-top:2px}
