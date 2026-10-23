@@ -167,7 +167,16 @@
   document.addEventListener('click',event=>{
     if(event.target.closest('[data-resource-cart]')){event.preventDefault();selectView('cart')}
     if(event.target.closest('[data-go-shop]')){event.preventDefault();selectView('shop')}
-    if(event.target.closest('[data-go-request]')){event.preventDefault();selectView('request')}
+    const requestButton=event.target.closest('[data-go-request]');
+    if(requestButton){
+      event.preventDefault();
+      selectView('request');
+      const product=requestButton.dataset.requestProduct||"",strength=requestButton.dataset.requestStrength||"";
+      const productInput=requestPanel.querySelector('[name="requested_product"]'),strengthInput=requestPanel.querySelector('[name="requested_strength"]');
+      if(productInput&&product)productInput.value=product;
+      if(strengthInput&&strength)strengthInput.value=strength;
+      if(product||strength)requestPanel.querySelector('#special-request-form')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
   });
 
   const requestForm=requestPanel.querySelector('#special-request-form');
