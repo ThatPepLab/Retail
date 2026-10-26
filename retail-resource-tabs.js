@@ -243,7 +243,8 @@
     grid.innerHTML=rows.length?rows.map(row=>{
       const complete=row.complete,pending=row.pending;
       const date=complete?.analysisDate||'';
-      const purity=complete?.purity||'';
+      const rawPurity=String(complete?.purity||'').trim();
+      const purity=/^(?:not reported|not listed|n\/?a|unknown)$/i.test(rawPurity)?'':rawPurity;
       const cls=complete?'has-complete':'has-pending';
       const statusText=complete?`Latest completed: ${date||'date not listed'}`:'COA pending';
       const pendingText=complete&&pending?'<span>Newer testing may also be pending.</span>':'';
