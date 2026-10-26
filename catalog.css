@@ -156,3 +156,12 @@
 .catalog-category-heading .category-copy small{color:#dce6f3;font-size:12px;font-weight:750}
 .catalog-group-visible .product-buttons{padding:14px}
 @media(max-width:540px){.catalog-category-heading{padding:13px 14px}.catalog-category-heading .category-copy strong{font-size:18px}}
+
+/* Two-column category quadrant layout for easier scanning. */
+.catalog-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.catalog-group-visible{grid-column:auto;min-width:0;height:100%}
+.catalog-group-visible .product-buttons{grid-template-columns:1fr;padding:12px}
+@media(max-width:820px){
+  .catalog-groups{grid-template-columns:1fr}
+  .catalog-group-visible{grid-column:1}
+}
