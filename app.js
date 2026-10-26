@@ -199,13 +199,16 @@ function refreshShoppingCategories(){const previous=categorySelect.value,names=r
 function renderCatalog(){
   const selected=categorySelect.value,groups=new Map();
   shoppingProducts().forEach(product=>{const category=categoryFor(product.name);if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});
-  const ordered=retailCategoryNames()
-    .filter(name=>selected==="all"||name===selected)
-    .sort((a,b)=>categoryAvailabilityRank(a,groups)-categoryAvailabilityRank(b,groups)||retailCategoryNames().indexOf(a)-retailCategoryNames().indexOf(b));
+  const visibleCategories=retailCategoryNames().filter(name=>selected==="all"||name===selected);
+  const ordered=[
+    ...visibleCategories.filter(name=>name==="Weight Loss"),
+    ...visibleCategories.filter(name=>name!=="Weight Loss"&&categoryHasAvailable(name,groups)),
+    ...visibleCategories.filter(name=>name!=="Weight Loss"&&!categoryHasAvailable(name,groups))
+  ];
   catalogGroups.innerHTML=ordered.map(name=>{
     const products=(groups.get(name)||[]).sort((a,b)=>productAvailabilityRank(a)-productAvailabilityRank(b)||displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));
     const body=products.length?`<div class="product-buttons">${products.map(catalogCard).join("")}</div>`:`<div class="catalog-empty-category"><strong>No featured item in this category right now.</strong><span>Looking for something specific?</span><button type="button" data-go-request>Request a peptide or strength</button></div>`;
-    return`<section class="catalog-group catalog-group-visible" aria-labelledby="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}"><div class="catalog-category-heading"><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong id="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}">${escapeHtml(name)}</strong><small>${products.length?products.length+" featured product"+(products.length===1?"":"s"):"Request available"}</small></span></div>${body}</section>`;
+    return`<section class="catalog-group catalog-group-visible${name==="Weight Loss"?" weight-loss-first":""}" data-category="${escapeHtml(name)}" aria-labelledby="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}"><div class="catalog-category-heading"><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong id="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}">${escapeHtml(name)}</strong><small>${products.length?products.length+" featured product"+(products.length===1?"":"s"):"Request available"}</small></span></div>${body}</section>`;
   }).join("");
 }
 function setShoppingMode(){state.shoppingMode="expert";state.shoppingModeChosen=true;state.purchaseMode="expert"}
