@@ -206,7 +206,13 @@
 .dose-guide-item:last-child{border-bottom:0}
 .dose-guide-bullet{color:var(--orange);font-size:20px;font-weight:950;line-height:.8}
 .dose-guide-item strong,.dose-guide-item small,.dose-guide-item em{display:block}
-.dose-guide-item strong{color:var(--navy);font-size:12px}
+.dose-guide-item strong{color:var(--navy);font-size:14px;font-weight:900;line-height:1.45}
 .dose-guide-item small{margin-top:2px;color:var(--muted);font-size:11px}
 .dose-guide-item em{margin-top:2px;color:var(--orange);font-size:9px;font-style:normal;font-weight:900;letter-spacing:.03em}
-.dose-guide .protocol-dose-note{margin-top:9px}
+.dose-guide .protocol-dose-note{margin-top:13px;padding:12px 14px;border:1px solid var(--navy);border-left:5px solid var(--navy);border-radius:8px;background:#fff;color:var(--navy);font-size:12px;font-weight:800;line-height:1.55}
+.dose-four-week-total{display:block;margin-top:7px;color:var(--navy);font-size:15px;font-weight:950;line-height:1.4}
+.dose-vial-match{display:block;margin-top:7px;padding:9px 11px;border-left:4px solid var(--orange);border-radius:5px;background:#fff0e3;color:var(--navy);font-size:13px;font-weight:800;line-height:1.5}
+.dose-vial-match b{font-weight:950}.dose-match-stock{white-space:nowrap}.dose-vial-match.unavailable{background:#edf0f5;border-color:var(--navy)}
+.dose-guide-item .dose-loss-note{color:var(--navy);font-weight:750;line-height:1.4}
+.dose-guide-item{padding:12px 0}.dose-guide-item em{margin-top:7px}
+
