@@ -165,3 +165,32 @@
   .catalog-groups{grid-template-columns:1fr}
   .catalog-group-visible{grid-column:1}
 }
+
+/* Compact quadrant layout: two category cards across, two products across inside each card. */
+.catalog-groups{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.catalog-group-visible{height:auto;align-self:start}
+.catalog-group-visible .product-buttons{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:10px}
+.catalog-group-visible .catalog-product-card{border-radius:11px;box-shadow:0 4px 10px rgba(16,45,89,.10)}
+.catalog-group-visible .catalog-vial{height:138px;aspect-ratio:auto}
+.catalog-group-visible .catalog-vial>span{font-size:10px}
+.catalog-group-visible .catalog-vial>span.long-name{font-size:8px}
+.catalog-group-visible .catalog-card-copy{padding:0 9px 8px}
+.catalog-group-visible .catalog-card-copy h4{margin-bottom:4px;font-size:14px}
+.catalog-group-visible .catalog-card-copy p{font-size:11px;line-height:1.3}
+.catalog-group-visible .catalog-inventory-list{gap:4px;padding:0 9px 8px}
+.catalog-group-visible .catalog-inventory-row{grid-template-columns:minmax(46px,.65fr) minmax(0,1.35fr);gap:2px 6px;padding:6px 7px;border-radius:7px}
+.catalog-group-visible .catalog-inventory-row span{font-size:10px}
+.catalog-group-visible .catalog-inventory-row strong{font-size:9px}
+.catalog-group-visible .catalog-inventory-row small{font-size:9px}
+.catalog-group-visible .catalog-card-status{padding:0 9px 8px}
+.catalog-group-visible .catalog-coa>span{font-size:10px}
+.catalog-group-visible .catalog-view-options{width:calc(100% - 18px);min-height:34px;margin:0 9px 9px;padding:6px 9px;border-radius:8px;font-size:11px}
+.catalog-group-visible .catalog-view-options span{font-size:17px}
+@media(max-width:900px){
+  .catalog-groups{grid-template-columns:1fr}
+  .catalog-group-visible .product-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  .catalog-group-visible .product-buttons{grid-template-columns:1fr}
+  .catalog-group-visible .catalog-vial{height:180px}
+}
