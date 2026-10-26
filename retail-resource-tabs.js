@@ -53,15 +53,18 @@
   requestPanel.hidden=true;
   requestPanel.innerHTML=`
     <div class="resource-card request-card">
-      <div class="resource-heading"><div><p>SPECIAL REQUEST</p><h2>Request a Specific Peptide or Strength</h2></div><span>Do not see what you need in the Shop? Tell us the exact peptide, strength, or format you are looking for. This is a request for availability—not a completed order.</span></div>
+      <div class="resource-heading"><div><p>SPECIAL REQUEST</p><h2>Request a Specific Product or Strength</h2></div><span>Choose a category to see its catalog products, then select the product and strength you need. This is a request for availability—not a completed order.</span></div>
+      <aside class="special-order-arrival"><strong>Special-order arrival: 2 full weeks after payment.</strong><span>Allow 14 calendar days after payment is received. The arrival period starts with payment, not when the request is submitted.</span></aside>
       <form id="special-request-form" class="special-request-form" action="https://formspree.io/f/mzepdzel" method="POST">
         <input type="hidden" name="request_type" value="Specific Peptide or Strength Request">
+        <input type="hidden" name="special_order_arrival" value="2 full weeks (14 calendar days) after payment is received">
         <div class="request-fields">
           <label><span>Name</span><input name="customer_name" autocomplete="name" required></label>
           <label><span>Email</span><input type="email" name="email" autocomplete="email" required></label>
           <label><span>Phone</span><input type="tel" name="phone" autocomplete="tel"></label>
-          <label><span>Peptide / product</span><input name="requested_product" placeholder="Example: GLP-3RT, Wolverine, 191AA…" required></label>
-          <label><span>Requested strength</span><input name="requested_strength" placeholder="Example: 40mg, 36 IU, 10mg"></label>
+          <label><span>Product category</span><select name="requested_category" required><option value="">Loading categories…</option></select></label>
+          <label><span>Peptide / product</span><select name="requested_product" required disabled><option value="">Choose a category first</option></select></label>
+          <label><span>Requested strength</span><select name="requested_strength" disabled><option value="">Choose a product first</option></select></label>
           <label class="request-notes"><span>Anything else we should know?</span><textarea name="request_notes" rows="4" placeholder="Quantity, preferred strength, format, or other details"></textarea></label>
         </div>
         <div class="request-submit-row"><div><strong>Not listed does not mean unavailable.</strong><span>We will review the request and contact you about availability and pricing.</span></div><button type="submit">Send Request</button></div>
@@ -144,6 +147,7 @@
   cartButtons.push(floatingCart);
 
   function selectView(name,smooth=true){
+    const previousView=activeView;
     activeView=name;
     buttons.forEach(button=>button.setAttribute('aria-selected',String(button.dataset.resourceTab===name)));
     homePanel.hidden=name!=='home';
@@ -156,6 +160,7 @@
     if(name!=='shop'&&quick)quick.hidden=true;
     if(name==='shop'&&typeof renderQuickList==='function')renderQuickList();
     if(name==='coa')renderCoas();
+    if(name==='request')renderRequestCategories(previousView==='shop'&&typeof categorySelect!=='undefined'&&categorySelect.value!=='all'?categorySelect.value:requestCategory.value);
     if(name==='protocol')syncProtocol();
     if(smooth)window.scrollTo({top:Math.max(0,navShell.offsetTop-8),behavior:'smooth'});
   }
@@ -172,17 +177,62 @@
       event.preventDefault();
       selectView('request');
       const product=requestButton.dataset.requestProduct||"",strength=requestButton.dataset.requestStrength||"";
-      const productInput=requestPanel.querySelector('[name="requested_product"]'),strengthInput=requestPanel.querySelector('[name="requested_strength"]');
-      if(productInput&&product)productInput.value=product;
-      if(strengthInput&&strength)strengthInput.value=strength;
+      if(product)prefillRequestProduct(product,strength);
+      else if(typeof categorySelect!=='undefined'&&categorySelect.value!=='all')renderRequestCategories(categorySelect.value);
       if(product||strength)requestPanel.querySelector('#special-request-form')?.scrollIntoView({behavior:'smooth',block:'start'});
     }
   });
 
   const requestForm=requestPanel.querySelector('#special-request-form');
   const requestStatus=requestPanel.querySelector('#special-request-status');
+  const requestCategory=requestForm.querySelector('[name="requested_category"]');
+  const requestProduct=requestForm.querySelector('[name="requested_product"]');
+  const requestStrength=requestForm.querySelector('[name="requested_strength"]');
+  // Keep controlled anabolic products outside this request flow.
+  const controlledRequestProduct=/\b(?:testosterone|nandrolone|boldenone|methenolone|trenbolone|drostanolone|oxymetholone|oxandrolone|methandrostenolone|mesterolone|stanozolol|chlorodehydromethyltestosterone|anadrol|anavar|dianabol|proviron|turanabol|turinabol|winstrol)\b/i;
+  function requestProducts(){
+    return typeof state==='undefined'||!state.catalogLoaded?[]:state.products.filter(product=>!controlledRequestProduct.test(product.name)&&!isOilBasedProduct(product.name));
+  }
+  function requestProductsFor(category){
+    return requestProducts().filter(product=>categoryFor(product.name)===category).sort((a,b)=>displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));
+  }
+  function renderRequestStrengths(preferred=requestStrength.value){
+    const product=requestProductsFor(requestCategory.value).find(product=>product.name===requestProduct.value);
+    const strengths=product?productStrengths(product).filter(value=>value!=='Choose quantity in cart'):[];
+    requestStrength.disabled=!product;
+    requestStrength.innerHTML=`<option value="">${product?'Any catalog strength':'Choose a product first'}</option>`+strengths.map(strength=>`<option value="${escapeHtml(strength)}">${escapeHtml(strength)}</option>`).join('');
+    requestStrength.value=strengths.includes(preferred)?preferred:'';
+  }
+  function renderRequestProducts(preferred=requestProduct.value){
+    const products=requestProductsFor(requestCategory.value);
+    requestProduct.disabled=!products.length;
+    requestProduct.innerHTML=`<option value="">${requestCategory.value?'Choose a product':'Choose a category first'}</option>`+products.map(product=>`<option value="${escapeHtml(product.name)}">${escapeHtml(displayProductName(product.name))}</option>`).join('');
+    requestProduct.value=products.some(product=>product.name===preferred)?preferred:'';
+    renderRequestStrengths();
+  }
+  function renderRequestCategories(preferred=requestCategory.value){
+    const names=[...new Set(requestProducts().map(product=>categoryFor(product.name)))];
+    names.sort((a,b)=>(a==='Weight Loss'?-1:b==='Weight Loss'?1:a.localeCompare(b)));
+    requestCategory.disabled=!names.length;
+    requestCategory.innerHTML=`<option value="">${names.length?'Choose a category':typeof state!=='undefined'&&state.catalogLoaded?'No request products available':'Loading categories…'}</option>`+names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+    requestCategory.value=names.includes(preferred)?preferred:'';
+    renderRequestProducts();
+  }
+  function prefillRequestProduct(name,strength=''){
+    const product=requestProducts().find(product=>product.name.toLowerCase()===name.toLowerCase()||displayProductName(product.name).toLowerCase()===name.toLowerCase());
+    if(!product)return;
+    renderRequestCategories(categoryFor(product.name));
+    renderRequestProducts(product.name);
+    renderRequestStrengths(strength);
+  }
+  requestCategory.addEventListener('change',()=>renderRequestProducts(''));
+  requestProduct.addEventListener('change',()=>renderRequestStrengths(''));
   requestForm?.addEventListener('submit',async event=>{
     event.preventDefault();
+    if(!requestProductsFor(requestCategory.value).some(product=>product.name===requestProduct.value)){
+      requestStatus.textContent='Choose a product from the selected category.';
+      return;
+    }
     const button=requestForm.querySelector('button[type="submit"]');
     if(button){button.disabled=true;button.textContent='Sending…'}
     requestStatus.textContent='Sending your request…';
@@ -190,7 +240,8 @@
       const response=await fetch(requestForm.action,{method:'POST',body:new FormData(requestForm),headers:{Accept:'application/json'}});
       if(!response.ok)throw new Error('Request failed');
       requestForm.reset();
-      requestStatus.textContent='Request sent. We will contact you after checking availability and pricing.';
+      renderRequestCategories('');
+      requestStatus.textContent='Request sent. We will contact you after checking availability and pricing. Special-order arrival is 2 full weeks (14 calendar days) after payment is received.';
     }catch(error){
       requestStatus.textContent='The request could not be sent. Please check your information and try again.';
     }finally{
@@ -255,7 +306,7 @@
   status.addEventListener('change',renderCoas);
   grid.addEventListener('click',event=>{const button=event.target.closest('[data-open-coa]');if(button)window.COARegistry?.open(button.dataset.product,button.dataset.strength)});
   document.addEventListener('coa-data-updated',renderCoas);
-  const catalogObserver=setInterval(()=>{if(typeof state!=='undefined'&&state.catalogLoaded){clearInterval(catalogObserver);renderCoas()}},200);
+  const catalogObserver=setInterval(()=>{if(typeof state!=='undefined'&&state.catalogLoaded){clearInterval(catalogObserver);renderCoas();renderRequestCategories()}},200);
 
   const gate=protocolPanel.querySelector('#protocol-gate');
   const workspace=protocolPanel.querySelector('#protocol-workspace');
