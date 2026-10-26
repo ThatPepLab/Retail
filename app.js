@@ -56,7 +56,7 @@ function visibleRetailProduct(product){const name=String(product?.name||"").trim
 const normalizeName=value=>String(value||"").toLowerCase().replace(/thymosin beta-?4/g,"tb500").replace(/wolverine/g,"").replace(/[^a-z0-9]+/g,"");
 const protocolEntries=Array.isArray(window.PROTOCOL_DATA)?window.PROTOCOL_DATA:[];
 const protocolDisplay=window.PROTOCOL_DISPLAY_DATA||{};
-function protocolFor(name){const key=normalizeName(name);return protocolEntries.find(entry=>normalizeName(entry.name)===key||normalizeName(entry.protocolName)===key)||null}
+function protocolFor(name){const key=normalizeName(name);return protocolEntries.find(entry=>normalizeName(entry.name)===key)||protocolEntries.find(entry=>normalizeName(entry.protocolName)===key)||null}
 const overviewOverrides=new Map([
   ["bpc157tb500","BPC-157 is a synthetic gastric peptide fragment studied mainly in preclinical models for repair-related signaling. TB-500 is related to thymosin beta-4 and is studied for cell migration, actin regulation, angiogenesis, and tissue repair. This blend combines both research compounds in one vial; published human evidence remains limited."],
 ]);
@@ -386,7 +386,7 @@ function downloadSelectedProductPdf(){
   const limitedLines=(text,width,maxLines=2)=>{const lines=doc.splitTextToSize(pdfText(text),width);if(lines.length<=maxLines)return lines;const kept=lines.slice(0,maxLines);kept[maxLines-1]=kept[maxLines-1].replace(/\s+\S*$/,"")+"...";return kept};
   const drawSectionTitle=(title,top,color=navy)=>{doc.setFillColor(...color);doc.roundedRect(margin,top,contentWidth,25,8,8,"F");doc.rect(margin,top+16,contentWidth,9,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text(pdfText(title),margin+13,top+17)};
   const drawSchedule=(rows)=>{
-    const top=y,widths=[108,198,234],rowH=30;drawSectionTitle("USUAL DOSAGE SCHEDULE",top,orange);y+=25;
+    const top=y,widths=[108,198,234],rowH=24;drawSectionTitle("USUAL DOSAGE SCHEDULE",top,orange);y+=25;
     let x=margin;doc.setFillColor(...cream);doc.rect(margin,y,contentWidth,22,"F");["PERIOD / ITEM","DOSE / INSTRUCTION","GUIDANCE"].forEach((head,index)=>{doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(7.4);doc.text(head,x+6,y+15);x+=widths[index]});y+=22;
     rows.slice(0,6).forEach((row,rowIndex)=>{doc.setFillColor(...(rowIndex%2?light:[255,255,255]));doc.setDrawColor(...border);doc.rect(margin,y,contentWidth,rowH,"FD");let cellX=margin;row.forEach((cell,index)=>{doc.setTextColor(...ink);doc.setFont("helvetica",index===0?"bold":"normal");doc.setFontSize(8);doc.text(limitedLines(cell,widths[index]-12,2),cellX+6,y+12,{lineHeightFactor:1.18});if(index<2)doc.line(cellX+widths[index],y,cellX+widths[index],y+rowH);cellX+=widths[index]});y+=rowH});
   };
@@ -409,17 +409,37 @@ function downloadSelectedProductPdf(){
   }
   drawSchedule(scheduleRows);
 
-  const prepTop=Math.min(438,y+10);doc.setFillColor(255,255,255);doc.setDrawColor(...border);doc.roundedRect(margin,prepTop,contentWidth,72,8,8,"FD");drawSectionTitle("PREPARATION & STORAGE",prepTop);doc.setTextColor(...ink);doc.setFont("helvetica","normal");doc.setFontSize(8);const prep=`Preparation: ${entry.reconstitution||"Follow product-specific preparation instructions."} Storage: ${entry.stability||"Follow labeled storage instructions."}`;doc.text(limitedLines(prep,contentWidth-28,3),margin+14,prepTop+40,{lineHeightFactor:1.2});
+  const prepTop=y+10;doc.setFillColor(255,255,255);doc.setDrawColor(...border);doc.roundedRect(margin,prepTop,contentWidth,64,8,8,"FD");drawSectionTitle("PREPARATION & STORAGE",prepTop);doc.setTextColor(...ink);doc.setFont("helvetica","normal");doc.setFontSize(8);const prep=`Preparation: ${entry.reconstitution||"Follow product-specific preparation instructions."} Storage: ${entry.stability||"Follow labeled storage instructions."}`;doc.text(limitedLines(prep,contentWidth-28,3),margin+14,prepTop+40,{lineHeightFactor:1.2});
 
-  const vialMg=Number.parseFloat(state.selectedStrength),dose=selectedDose,doseContext=state.protocolMode==="returning"?"RETURNING / CURRENT DOSE":"STARTER DOSE",calculable=display?.calculable!==false&&entry.calculable!==false&&dose?.mg>0&&vialMg>0,isNasal=/^(semax|selank)$/i.test(String(entry.name||entry.protocolName||""));
-  const recTop=522,recHeight=188;doc.setFillColor(...navy);doc.setDrawColor(...orange);doc.setLineWidth(2);doc.roundedRect(margin,recTop,contentWidth,recHeight,12,12,"FD");doc.setFillColor(...orange);doc.roundedRect(margin,recTop,contentWidth,30,12,12,"F");doc.rect(margin,recTop+18,contentWidth,12,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text(isNasal?"RECOMMENDED NASAL PREPARATION":"RECOMMENDED RECONSTITUTION & UNIT DRAW",pageWidth/2,recTop+20,{align:"center"});
-  if(calculable&&isNasal){
-    const sprays=dose.mg*50/vialMg,coverage=vialMg/dose.mg;doc.setFontSize(10);doc.text(`5 mL STERILE SALINE  |  ${pdfText(doseText(dose))} ${doseContext}`,pageWidth/2,recTop+53,{align:"center"});doc.setTextColor(...orange);doc.setFontSize(42);doc.text(Number(sprays.toFixed(2)).toString(),pageWidth/2,recTop+105,{align:"center"});doc.setTextColor(255,255,255);doc.setFontSize(12);doc.text(`SPRAY${Math.abs(sprays-1)<.001?"":"S"} PER DOSE`,pageWidth/2,recTop+126,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(`Approximately ${Number(coverage.toFixed(1))} doses per vial - based on a 5 mL sprayer delivering about 50 sprays`,pageWidth/2,recTop+151,{align:"center"});
-  }else if(calculable){
-    const water=[1,1.5,2,2.5,3],recommended=water.map(ml=>({ml,units:dose.mg/vialMg*ml*100})).filter(row=>row.units>0&&row.units<50.000001).sort((a,b)=>a.units-b.units||a.ml-b.ml)[0],coverage=vialMg/dose.mg;
-    if(recommended){doc.setFontSize(10);doc.text(`${recommended.ml} mL BAC WATER  |  ${pdfText(doseText(dose))} ${doseContext}`,pageWidth/2,recTop+53,{align:"center"});doc.setTextColor(...orange);doc.setFontSize(46);doc.text(Number(recommended.units.toFixed(2)).toString(),pageWidth/2,recTop+108,{align:"center"});doc.setTextColor(255,255,255);doc.setFontSize(12);doc.text("UNITS ON A U-100 SYRINGE",pageWidth/2,recTop+130,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(`${Number(coverage.toFixed(1))} doses per vial - recommendation uses the lowest draw under 50 units`,pageWidth/2,recTop+154,{align:"center"})}
-    else{doc.setFontSize(18);doc.text("NO LISTED VOLUME KEEPS THIS DOSE UNDER 50 UNITS",pageWidth/2,recTop+94,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text("Review the selected vial strength and usual dose before calculating a draw.",pageWidth/2,recTop+121,{align:"center"})}
-  }else{doc.setFontSize(20);doc.text("UNIT CALCULATION NOT AVAILABLE",pageWidth/2,recTop+94,{align:"center"});doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text("No generalized dose or reconstitution calculation is provided for this item.",pageWidth/2,recTop+121,{align:"center"})}
+  const vial=strengthMeasure(state.selectedStrength),isNasal=/^(semax|selank)$/i.test(String(entry.name||entry.protocolName||""));
+  const references=availableProtocolDoses(entry),recTop=prepTop+76,recBottom=pageHeight-66;
+  drawSectionTitle(isNasal?"NASAL PREPARATION & DRAW REFERENCE":"RECONSTITUTION & UNIT DRAW REFERENCE",recTop,orange);
+  if(references.length){
+    const columns=Math.min(3,references.length),rows=Math.ceil(references.length/columns),gap=10,gridTop=recTop+34;
+    const cardSize=Math.min(156,(contentWidth-gap*(columns-1))/columns,(recBottom-gridTop-22-gap*(rows-1))/rows);
+    references.forEach((dose,index)=>{
+      const row=Math.floor(index/columns),rowCount=Math.min(columns,references.length-row*columns),left=margin+(contentWidth-(rowCount*cardSize+(rowCount-1)*gap))/2+(index%columns)*(cardSize+gap),top=gridTop+row*(cardSize+gap),center=left+cardSize/2;
+      const measure=doseMeasure(dose),calculable=display?.calculable!==false&&entry.calculable!==false&&measure?.unit==="mg"&&vial?.unit==="mg";
+      doc.setFillColor(...navy);doc.setDrawColor(...orange);doc.setLineWidth(1);doc.roundedRect(left,top,cardSize,cardSize,8,8,"FD");
+      doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(9);
+      doc.text(limitedLines(doseText(dose),cardSize-12,2),center,top+15,{align:"center",lineHeightFactor:1.1});
+      const period=dose.weekLabel||scheduleFrequency||"Listed dose";doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.text(limitedLines(period,cardSize-12,1),center,top+29,{align:"center"});
+      const units=calculable?measure.amount/vial.amount*(isNasal?50:100):null,withinRange=isNasal||units<=50.000001;
+      if(units>0&&withinRange){
+        doc.setTextColor(...orange);doc.setFont("helvetica","bold");doc.setFontSize(cardSize<110?23:30);doc.text(Number(units.toFixed(2)).toString(),center,top+cardSize*.62,{align:"center"});
+        doc.setTextColor(255,255,255);doc.setFontSize(7);doc.text(isNasal?"SPRAYS PER DOSE":"U-100 SYRINGE UNITS",center,top+cardSize*.62+12,{align:"center"});
+        doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text(isNasal?"5 mL sterile saline":"1 mL BAC water",center,top+cardSize-10,{align:"center"});
+      }else{
+        doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.text(limitedLines(calculable?"Exceeds listed 50-unit reference":"Calculation unavailable",cardSize-16,3),center,top+cardSize*.56,{align:"center",lineHeightFactor:1.2});
+      }
+    });
+    doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(7);
+    doc.text(isNasal?"All listed doses shown; spray math assumes 50 sprays per 5 mL bottle.":"All listed doses shown; draw math uses the selected vial and the water volume on each card.",pageWidth/2,recBottom-9,{align:"center"});
+    doc.text("Labeled amounts only; allow for handling loss. No extra weeks of use are implied.",pageWidth/2,recBottom,{align:"center"});
+  }else{
+    doc.setTextColor(...ink);doc.setFont("helvetica","bold");doc.setFontSize(14);doc.text("NO LISTED DOSE CALCULATIONS",pageWidth/2,recTop+75,{align:"center"});
+    doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text("No generalized dose or reconstitution calculation is provided for this item.",pageWidth/2,recTop+96,{align:"center"});
+  }
   doc.setDrawColor(...orange);doc.setLineWidth(1);doc.line(margin,pageHeight-51,pageWidth-margin,pageHeight-51);doc.setTextColor(...navy);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text("Research ONLY. Not medical advice.",margin,pageHeight-36);doc.setTextColor(...muted);doc.setFont("helvetica","normal");doc.setFontSize(7);doc.text(`Selected vial: ${pdfText(state.selectedStrength||"Not selected")}  |  One-page quick guide`,pageWidth-margin,pageHeight-36,{align:"right"});
   const filename=String(entry.name||"protocol").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");doc.save(`${filename}-${String(state.selectedStrength||"").replace(/\s+/g,"-")}-protocol.pdf`)
 }
@@ -457,3 +477,4 @@ orderForm.addEventListener("submit",async event=>{event.preventDefault();if(!sta
 async function fetchInventoryEntries(){const stamp=Date.now(),sources=[`https://raw.githubusercontent.com/ThatPepLab/InStock/main/inventory.json?updated=${stamp}`,`inventory.json?updated=${stamp}`];for(const source of sources){try{const response=await fetch(source,{cache:"no-store"});if(response.ok)return await response.json()}catch(error){console.warn("Inventory source failed",source,error)}}throw new Error("Inventory unavailable")}function inventoryEntryFeedsRetail(entry){const name=String(entry?.product||"").trim();if(entry?.internalOnly===true)return false;if(isOilBasedProduct(name))return false;if(TABLET_PRODUCT_PATTERN.test(name)||RETAIL_RESTOCK_TABLET_PATTERN.test(name))return false;return true}async function refreshInventory(){try{const entries=await fetchInventoryEntries(),next=new Map(),incoming=new Map(),listed=new Map();for(const entry of Array.isArray(entries)?entries:[]){if(!entry.product||!entry.strength||!inventoryEntryFeedsRetail(entry))continue;const key=stockKey(entry.product,entry.strength),quantity=Math.max(0,Math.floor(Number(entry.quantity)||0));listed.set(key,{product:entry.product,strength:entry.strength,quantity});if(quantity>0)next.set(key,quantity);if(entry.moreOnWay===true)incoming.set(key,{incomingQuantity:Math.max(0,Math.floor(Number(entry.incomingQuantity)||0)),expectedArrival:String(entry.expectedArrival||"").trim()})}state.inventory=next;state.incoming=incoming;state.listedInventory=listed;state.inventoryLoaded=true;refreshShoppingCategories();renderCatalog();renderSuggestions();if(state.selectedProduct){if(!productAvailableInShoppingMode(state.selectedProduct)){selection.hidden=true;state.selectedProduct=null;state.selectedStrength="";}else{renderStrengths();renderProtocolDoseChoice(protocolFor(state.selectedProduct.name));renderPrices()}}}catch(error){state.inventoryLoaded=true;console.warn("Inventory check failed",error)}}
 fetch(`/Wholesale/catalog-data.json?updated=${Date.now()}`,{cache:"no-store"}).then(response=>{if(!response.ok)throw new Error("Catalog unavailable");return response.json()}).then(products=>{state.products=products.filter(visibleRetailProduct);state.catalogLoaded=true;refreshShoppingCategories();renderCatalog()}).catch(()=>{catalogGroups.innerHTML='<div class="prompt"><strong>Catalog unavailable.</strong><span>Please refresh the page.</span></div>'});refreshInventory();setInterval(refreshInventory,300000);renderCart();
 document.addEventListener("coa-data-updated",()=>{renderCatalog();if(state.selectedProduct)renderPrices()});
+
