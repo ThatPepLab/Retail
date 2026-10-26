@@ -206,8 +206,9 @@
   .catalog-group-visible .catalog-vial{height:180px}
 }
 
-/* Weight Loss is always the first visual category card. */
+/* Keep populated Weight Loss first and empty categories at the bottom. */
 .catalog-group-visible.weight-loss-first{order:-1000}
+.catalog-group-visible:has(.catalog-empty-category){order:1000}
 
 /* Read-only four-week dose reference; no selectable dose controls. */
 .dose-guide{padding:0}

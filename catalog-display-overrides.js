@@ -23,11 +23,17 @@
       if(replacement)node.nodeValue=node.nodeValue.replace(trimmed,replacement);
     }
   }
-  function sortChildren(container,labelFor){
+  function sortChildren(container,labelFor,rankFor=()=>0){
     if(!container)return;
     const children=[...container.children];
-    const sorted=[...children].sort((a,b)=>labelFor(a).localeCompare(labelFor(b),undefined,{sensitivity:"base"}));
+    const sorted=[...children].sort((a,b)=>rankFor(a)-rankFor(b)||labelFor(a).localeCompare(labelFor(b),undefined,{sensitivity:"base"}));
     if(children.some((child,index)=>child!==sorted[index]))container.append(...sorted);
+  }
+  function categoryRank(group){
+    if(group.querySelector('.catalog-empty-category'))return 3;
+    if(group.dataset.category==='Weight Loss')return 0;
+    if(group.querySelector('.catalog-product-card.in-stock, .catalog-inventory-row.is-available'))return 1;
+    return 2;
   }
   function apply(){
     scheduled=false;
@@ -43,7 +49,7 @@
     document.querySelectorAll(".product-buttons").forEach(group=>{
       sortChildren(group,card=>card.querySelector(".catalog-card-copy h4")?.textContent.trim()||"");
     });
-    sortChildren(document.querySelector("#catalog-groups"),group=>group.querySelector(".category-copy strong")?.textContent.trim()||"");
+    sortChildren(document.querySelector("#catalog-groups"),group=>group.querySelector(".category-copy strong")?.textContent.trim()||"",categoryRank);
     const details=document.querySelector("#order-details-field");
     if(details&&/Semaglutide \(GLP-1\)|Tirzepatide \(GLP-2\)/.test(details.value)){
       details.value=details.value.replaceAll("Semaglutide (GLP-1)","GLP-1SG").replaceAll("Tirzepatide (GLP-2)","GLP-2TR");
