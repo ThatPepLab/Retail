@@ -213,6 +213,21 @@ function renderCatalog(){
   }).join("");
 }
 function setShoppingMode(){state.shoppingMode="expert";state.shoppingModeChosen=true;state.purchaseMode="expert"}
+const strengthOptions=$('#strength-options');
+function renderStrengthCards(){
+  if(!strengthOptions||!state.selectedProduct)return;
+  const strengths=carriedStrengths(state.selectedProduct);
+  strengthOptions.innerHTML=strengths.length?strengths.map(strength=>{
+    const status=retailAvailability(state.selectedProduct.name,strength);
+    return `<label class="strength-option"><input type="radio" name="retail-strength" value="${escapeHtml(strength)}" aria-controls="prices" ${strength===state.selectedStrength?'checked':''}><span class="strength-option-copy"><strong>${escapeHtml(strength)}</strong><span class="strength-option-stock">${escapeHtml(status.label.toLowerCase())}</span><span class="strength-option-selected">✓ Selected</span></span></label>`;
+  }).join(''):'<p class="strength-options-empty">No active strength listed.</p>';
+}
+strengthOptions?.addEventListener('change',event=>{
+  const input=event.target.closest('input[name="retail-strength"]');
+  if(!input||!input.checked)return;
+  strengthSelect.value=input.value;
+  strengthSelect.dispatchEvent(new Event('change',{bubbles:true}));
+});
 function renderStrengths(){
   if(!state.selectedProduct)return;
   const strengthField=strengthSelect.closest(".strength-field"),strengths=carriedStrengths(state.selectedProduct);
@@ -223,6 +238,7 @@ function renderStrengths(){
     strengthSelect.innerHTML='<option value="">No active strength listed</option>';
     strengthSelect.disabled=true;
     state.selectedStrength="";
+    renderStrengthCards();
     return;
   }
   strengthSelect.disabled=false;
@@ -232,6 +248,7 @@ function renderStrengths(){
   }).join("");
   if(!strengths.includes(state.selectedStrength))state.selectedStrength=strengths[0]||"";
   strengthSelect.value=state.selectedStrength;
+  renderStrengthCards();
 }
 function chooseProduct(name,preferredStrength=""){const product=state.products.find(item=>item.name===name);if(!product||!productAvailableInShoppingMode(product))return;state.selectedProduct=product;search.value=displayProductName(product.name);suggestions.hidden=true;selectedName.textContent=displayProductName(product.name);const entry=protocolFor(product.name),educationUrl=wikiUrl(entry);downloadProductPdf.hidden=!entry;productEducation.hidden=!educationUrl;productEducation.href=educationUrl||"#";productInfo.hidden=!entry&&!educationUrl;const strengths=carriedStrengths(product);state.selectedStrength=strengths.includes(preferredStrength)?preferredStrength:(strengths[0]||"");state.purchaseMode="expert";state.protocolMode="starter";state.selectedProtocolDose=0;renderProtocolDoseChoice(entry);renderStrengths();selection.hidden=false;selection.closest(".finder-card")?.classList.add("product-selected");renderPrices();selection.scrollIntoView({behavior:"smooth",block:"start"})}
 function pdfText(value){return String(value||"").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x09\x0A\x0D\x20-\x7E]/g,"")}
