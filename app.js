@@ -196,7 +196,7 @@ function renderCatalog(){
   catalogGroups.innerHTML=ordered.map(name=>{
     const products=(groups.get(name)||[]).sort((a,b)=>displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));
     const body=products.length?`<div class="product-buttons">${products.map(catalogCard).join("")}</div>`:`<div class="catalog-empty-category"><strong>No featured item in this category right now.</strong><span>Looking for something specific?</span><button type="button" data-go-request>Request a peptide or strength</button></div>`;
-    return`<details class="catalog-group"><summary><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong>${escapeHtml(name)}</strong><small>${products.length?products.length+" featured product"+(products.length===1?"":"s"):"Request available"}</small></span><span class="category-action">View <b aria-hidden="true">+</b></span></summary>${body}</details>`;
+    return`<section class="catalog-group catalog-group-visible" aria-labelledby="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}"><div class="catalog-category-heading"><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong id="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}">${escapeHtml(name)}</strong><small>${products.length?products.length+" featured product"+(products.length===1?"":"s"):"Request available"}</small></span></div>${body}</section>`;
   }).join("");
 }
 function setShoppingMode(){state.shoppingMode="expert";state.shoppingModeChosen=true;state.purchaseMode="expert"}
