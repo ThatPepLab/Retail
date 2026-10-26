@@ -237,5 +237,6 @@
 .dose-vial-match.unavailable{background:#edf0f5;border-color:var(--navy);font-size:11px;font-weight:750}
 .dose-guide-item .dose-loss-note{display:block;color:var(--muted);font-size:9px;font-weight:700;line-height:1.2}
 .dose-guide-warning{margin:10px 0 0;color:var(--navy);font-size:11px;font-weight:950}
+.dose-guide-empty{grid-column:1/-1;margin:0;color:var(--navy);font-size:12px;line-height:1.5}
 .dose-guide .protocol-dose-note{margin:8px 0 0;padding:8px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;color:var(--muted);font-size:10px;font-weight:650;line-height:1.45}
 @media(max-width:640px){.dose-guide .protocol-dose-list{grid-template-columns:repeat(2,minmax(0,1fr));max-width:340px}}
