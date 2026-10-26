@@ -194,3 +194,6 @@
   .catalog-group-visible .product-buttons{grid-template-columns:1fr}
   .catalog-group-visible .catalog-vial{height:180px}
 }
+
+/* Weight Loss is always the first visual category card. */
+.catalog-group-visible.weight-loss-first{order:-1000}
