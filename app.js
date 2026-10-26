@@ -89,10 +89,7 @@ function retailAvailability(product,strength){
   return{state:"request",label:"REQUEST",quantity:0,incoming:null};
 }
 function highestPriceItem(product,strength){const candidates=productItems(product).filter(item=>item.strength===strength);if(!candidates.length)return null;return{strength,restocksQuickly:candidates.some(item=>item.restocksQuickly),retail:Object.fromEntries([...new Set([...Object.keys(expertTierInfo),"one"])].map(key=>[key,Math.max(...candidates.map(item=>Number(item.retail?.[key])||0))]))}}
-const CURATED_BESTSELLERS=new Set(["glp-3rt","tirzepatide","wolverine","hgh 191aa","tesamorelin","mots-c","ss-31","selank","semax","ghk-cu"]);
-const curatedProductKey=name=>String(name||"").trim().toLowerCase();
-function isCuratedBestseller(product){return CURATED_BESTSELLERS.has(curatedProductKey(product?.name))}
-function productAvailableInShoppingMode(product){return isCuratedBestseller(product)&&carriedStrengths(product).length>0}
+function productAvailableInShoppingMode(product){return carriedStrengths(product).length>0}
 function shoppingProducts(){return state.products.filter(productAvailableInShoppingMode)}
 function matchingProducts(){const query=search.value.trim().toLowerCase();return query?shoppingProducts().filter(product=>product.name.toLowerCase().includes(query)||displayProductName(product.name).toLowerCase().includes(query)).slice(0,12):[]}
 function stockChip(product){return productInStock(product)?'<span class="stock-chip">IN STOCK</span>':""}
