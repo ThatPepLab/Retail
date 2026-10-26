@@ -329,14 +329,15 @@ function updateProtocolDoseNote(){if(protocolDoseNote)protocolDoseNote.textConte
 function isGlpProduct(name){return /semaglutide|tirzepatide|trizepatide|retatrutide|glp-?1|glp-?2|glp-?3/i.test(String(name||""))}
 function selectedVialMatch(requirement){
   const strength=state.selectedStrength,measure=strengthMeasure(strength);
-  if(!requirement||!measure||measure.unit!==requirement.unit||requirement.amount>measure.amount+1e-9)return null;
-  return{strength,exact:Math.abs(measure.amount-requirement.amount)<1e-9};
+  if(!requirement||!measure||measure.unit!==requirement.unit)return null;
+  const count=Math.max(1,Math.ceil(requirement.amount/measure.amount-1e-9));
+  return{strength,count,exact:Math.abs(count*measure.amount-requirement.amount)<1e-9};
 }
 function vialMatchMarkup(requirement){
   if(!requirement)return"";
   const match=selectedVialMatch(requirement);
   if(!match)return "";
-  return `<span class="dose-vial-match"><span class="dose-match-stock">Selected vial</span><b>1 × ${escapeHtml(match.strength)}</b></span>${match.exact?'<small class="dose-loss-note">Exact total; no loss allowance.</small>':""}`;
+  return `<span class="dose-vial-match"><span class="dose-match-stock">Vials needed</span><b>${match.count} × ${escapeHtml(match.strength)}</b></span>${match.exact?'<small class="dose-loss-note">Exact total; no loss allowance.</small>':""}`;
 }
 function setupProtocolGuideDisclosure(){
   const guide=protocolDoseChoice,summary=guide?.querySelector('summary');
@@ -370,10 +371,10 @@ function renderProtocolDoseChoice(entry){
   protocolDoseList.innerHTML=plans.length?plans.map(({dose,index,requirement})=>{
     const period=dose.weekLabel?dose.weekLabel:(index===0?"Starting dose":"Maintenance"),doseLabel=doseText(dose)+(requirement.multiplier===4?" (Weekly)":""),needed=formatDoseMeasure(requirement);
     return `<article class="dose-guide-item"><span class="dose-guide-period">${escapeHtml(period)}</span><strong>${escapeHtml(doseLabel)}</strong>${needed?`<span class="dose-four-week-total">${escapeHtml(needed)}<small>for 4 weeks</small></span>`:""}${vialMatchMarkup(requirement)}</article>`;
-  }).join(""):'<p class="dose-guide-empty">No four-week total in this guide fits one selected vial.</p>';
+  }).join(""):'<p class="dose-guide-empty">No compatible four-week totals are listed for this vial strength.</p>';
   const warning=protocolDoseChoice.querySelector('#protocol-dose-warning');
   if(warning)warning.hidden=!(plans.some(plan=>plan.index>0)&&isGlpProduct(state.selectedProduct?.name));
-  if(protocolDoseNote)protocolDoseNote.textContent=`Based on one ${state.selectedStrength} vial. Allow for handling loss; leftovers don't count as extra weeks.`;
+  if(protocolDoseNote)protocolDoseNote.textContent=`Minimum counts use the labeled ${state.selectedStrength} amount, rounded up to whole vials. Allow for handling loss; leftovers don't count as extra weeks.`;
 }
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
