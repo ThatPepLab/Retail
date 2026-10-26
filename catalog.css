@@ -80,7 +80,11 @@
 .fulfillment-options input{width:18px;height:18px;accent-color:var(--orange)}
 .fulfillment-options strong,.fulfillment-options small{display:block}.fulfillment-options small{margin-top:2px;color:var(--muted)}
 @media(max-width:520px){.fulfillment-options{grid-template-columns:1fr}}
-.price-grid{grid-template-columns:minmax(0,430px)}
+.selection .price-grid{width:100%;max-width:none;grid-template-columns:minmax(0,1fr)}
+.selection .price-card{min-width:0}
+.selection .price-card .package-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.selection .price-card .package-options .tier-choice{min-height:80px;padding:14px}
+.price-card .mode-inline-note>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
 .single-cart{grid-template-columns:1fr}
 .single-cart .cart-panel{width:100%}
 
