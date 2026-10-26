@@ -341,8 +341,8 @@ function stockedVialMatch(product,requirement){
 function vialMatchMarkup(requirement){
   if(!requirement)return"";
   const match=stockedVialMatch(state.selectedProduct,requirement);
-  if(!match)return '<span class="dose-vial-match unavailable">No in-stock vial option covers this 4-week total.</span>';
-  return `<span class="dose-vial-match">Recommended vial${match.count>1?"s":""}: <b>${match.count} × ${escapeHtml(match.strength)}</b> <span class="dose-match-stock">(in stock)</span></span>${match.exact?'<small class="dose-loss-note">Exact labeled total; no allowance for handling loss.</small>':""}`;
+  if(!match)return '<span class="dose-vial-match unavailable">No in-stock vial match</span>';
+  return `<span class="dose-vial-match"><span class="dose-match-stock">In-stock vial${match.count>1?"s":""}</span><b>${match.count} × ${escapeHtml(match.strength)}</b></span>${match.exact?'<small class="dose-loss-note">Exact total; no loss allowance.</small>':""}`;
 }
 function setupProtocolGuideDisclosure(){
   const guide=protocolDoseChoice,summary=guide?.querySelector('summary');
@@ -372,10 +372,11 @@ function renderProtocolDoseChoice(entry){
   state.selectedProtocolDose=0;
   protocolDoseList.innerHTML=doses.map((dose,index)=>{
     const requirement=fourWeekRequirementForDose(entry,dose),period=dose.weekLabel?dose.weekLabel:(index===0?"Starting dose":"Maintenance"),doseLabel=doseText(dose)+(requirement?.multiplier===4?" (Weekly)":""),needed=requirement?formatDoseMeasure(requirement):"";
-    const warning=index>0&&isGlpProduct(state.selectedProduct?.name)?'<em>Increase ONLY IF NECESSARY.</em>':"";
-    return `<div class="dose-guide-item"><span class="dose-guide-bullet" aria-hidden="true">•</span><span><strong>${escapeHtml(period)} — ${escapeHtml(doseLabel)}</strong>${needed?`<span class="dose-four-week-total">${escapeHtml(needed)} needed for 4 weeks</span>`:""}${vialMatchMarkup(requirement)}${warning}</span></div>`;
+    return `<article class="dose-guide-item"><span class="dose-guide-period">${escapeHtml(period)}</span><strong>${escapeHtml(doseLabel)}</strong>${needed?`<span class="dose-four-week-total">${escapeHtml(needed)}<small>for 4 weeks</small></span>`:""}${vialMatchMarkup(requirement)}</article>`;
   }).join("");
-  if(protocolDoseNote)protocolDoseNote.textContent="Plan for 4 weeks only. Vial matches use labeled amounts; allow for handling loss. Leftover content is not counted as extra weeks. Choose your vial strength below.";
+  const warning=protocolDoseChoice.querySelector('#protocol-dose-warning');
+  if(warning)warning.hidden=!(doses.length>1&&isGlpProduct(state.selectedProduct?.name));
+  if(protocolDoseNote)protocolDoseNote.textContent="Vial matches use labeled content for 4 weeks. Allow for handling loss; leftovers don't count as extra weeks.";
 }
 function downloadSelectedProductPdf(){
   const entry=protocolFor(state.selectedProduct?.name);
