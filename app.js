@@ -82,10 +82,14 @@ function productStrengths(product){if(isBacWater(product?.name))return["Choose q
 function carriedStrengths(product){return productStrengths(product).filter(strength=>strength!=="Choose quantity in cart"&&listedInventory(product.name,strength))}
 function inStockStrengths(product){return carriedStrengths(product).filter(strength=>stockQuantity(product.name,strength)>0)}
 function retailAvailability(product,strength){
-  const quantity=stockQuantity(product,strength),incoming=incomingInventory(product,strength);
-  if(quantity>0)return{state:"available",label:`${quantity} AVAILABLE`,quantity,incoming};
-  if(incoming?.expectedArrival)return{state:"on-the-way",label:"ON THE WAY",quantity:0,incoming};
-  if(incoming)return{state:"coming-soon",label:"COMING SOON",quantity:0,incoming};
+  const quantity=stockQuantity(product,strength),incoming=incomingInventory(product,strength),incomingQuantity=Math.max(0,Number(incoming?.incomingQuantity)||0);
+  if(quantity>0&&incoming){
+    const inboundLabel=incoming?.expectedArrival?"ON THE WAY":"COMING SOON";
+    return{state:"available",label:`${quantity} AVAILABLE · ${incomingQuantity?incomingQuantity+" ":""}${inboundLabel}`,quantity,incoming};
+  }
+  if(quantity>0)return{state:"available",label:`${quantity} AVAILABLE`,quantity,incoming:null};
+  if(incoming?.expectedArrival)return{state:"on-the-way",label:`${incomingQuantity?incomingQuantity+" ":""}ON THE WAY`,quantity:0,incoming};
+  if(incoming)return{state:"coming-soon",label:`${incomingQuantity?incomingQuantity+" ":""}COMING SOON`,quantity:0,incoming};
   return{state:"request",label:"REQUEST",quantity:0,incoming:null};
 }
 function highestPriceItem(product,strength){const candidates=productItems(product).filter(item=>item.strength===strength);if(!candidates.length)return null;return{strength,restocksQuickly:candidates.some(item=>item.restocksQuickly),retail:Object.fromEntries([...new Set([...Object.keys(expertTierInfo),"one"])].map(key=>[key,Math.max(...candidates.map(item=>Number(item.retail?.[key])||0))]))}}
@@ -170,7 +174,7 @@ function catalogCoaMarkup(product){
 }
 function catalogInventoryMarkup(product){
   return carriedStrengths(product).map(strength=>{
-    const status=retailAvailability(product.name,strength),detail=status.state==="on-the-way"&&status.incoming?.expectedArrival?`<small>${escapeHtml(formatArrival(status.incoming.expectedArrival))}</small>`:"";
+    const status=retailAvailability(product.name,strength),detail=status.incoming?.expectedArrival?`<small>${escapeHtml(formatArrival(status.incoming.expectedArrival))}</small>`:"";
     return `<div class="catalog-inventory-row is-${status.state}"><span>${escapeHtml(strength)}</span><strong>${status.label}</strong>${detail}</div>`;
   }).join("");
 }
