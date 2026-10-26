@@ -327,8 +327,28 @@ function vialMatchMarkup(requirement){
   if(!match)return '<span class="dose-vial-match unavailable">No in-stock vial option covers this 4-week total.</span>';
   return `<span class="dose-vial-match">Recommended vial${match.count>1?"s":""}: <b>${match.count} × ${escapeHtml(match.strength)}</b> <span class="dose-match-stock">(in stock)</span></span>${match.exact?'<small class="dose-loss-note">Exact labeled total; no allowance for handling loss.</small>':""}`;
 }
+function setupProtocolGuideDisclosure(){
+  const guide=protocolDoseChoice,summary=guide?.querySelector('summary');
+  if(!summary)return;
+  let openedByHover=false;
+  const closeHover=()=>{if(openedByHover){guide.open=false;openedByHover=false}};
+  guide.addEventListener('pointerenter',event=>{
+    if(event.pointerType==='mouse'&&window.matchMedia('(hover: hover)').matches&&!guide.open){openedByHover=true;guide.open=true}
+  });
+  guide.addEventListener('pointerleave',()=>{if(!guide.contains(document.activeElement))closeHover()});
+  summary.addEventListener('click',event=>{
+    if(openedByHover){event.preventDefault();openedByHover=false;guide.open=true}
+  });
+  guide.addEventListener('focusout',event=>{if(!guide.contains(event.relatedTarget)&&!guide.matches(':hover'))closeHover()});
+  guide.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){openedByHover=false;guide.open=false;summary.focus()}
+  });
+}
+setupProtocolGuideDisclosure();
 function renderProtocolDoseChoice(entry){
   const doses=entry?availableProtocolDoses(entry):[];
+  const product=state.selectedProduct?.name||'';
+  if(protocolDoseChoice.dataset.product!==product){protocolDoseChoice.open=false;protocolDoseChoice.dataset.product=product}
   protocolDoseChoice.hidden=!doses.length;
   if(!doses.length){if(protocolDoseList)protocolDoseList.innerHTML="";return}
   state.protocolMode="starter";
@@ -421,4 +441,3 @@ orderForm.addEventListener("submit",async event=>{event.preventDefault();if(!sta
 async function fetchInventoryEntries(){const stamp=Date.now(),sources=[`https://raw.githubusercontent.com/ThatPepLab/InStock/main/inventory.json?updated=${stamp}`,`inventory.json?updated=${stamp}`];for(const source of sources){try{const response=await fetch(source,{cache:"no-store"});if(response.ok)return await response.json()}catch(error){console.warn("Inventory source failed",source,error)}}throw new Error("Inventory unavailable")}function inventoryEntryFeedsRetail(entry){const name=String(entry?.product||"").trim();if(entry?.internalOnly===true)return false;if(isOilBasedProduct(name))return false;if(TABLET_PRODUCT_PATTERN.test(name)||RETAIL_RESTOCK_TABLET_PATTERN.test(name))return false;return true}async function refreshInventory(){try{const entries=await fetchInventoryEntries(),next=new Map(),incoming=new Map(),listed=new Map();for(const entry of Array.isArray(entries)?entries:[]){if(!entry.product||!entry.strength||!inventoryEntryFeedsRetail(entry))continue;const key=stockKey(entry.product,entry.strength),quantity=Math.max(0,Math.floor(Number(entry.quantity)||0));listed.set(key,{product:entry.product,strength:entry.strength,quantity});if(quantity>0)next.set(key,quantity);if(entry.moreOnWay===true)incoming.set(key,{incomingQuantity:Math.max(0,Math.floor(Number(entry.incomingQuantity)||0)),expectedArrival:String(entry.expectedArrival||"").trim()})}state.inventory=next;state.incoming=incoming;state.listedInventory=listed;state.inventoryLoaded=true;refreshShoppingCategories();renderCatalog();renderSuggestions();if(state.selectedProduct){if(!productAvailableInShoppingMode(state.selectedProduct)){selection.hidden=true;state.selectedProduct=null;state.selectedStrength="";}else{renderProtocolDoseChoice(protocolFor(state.selectedProduct.name));renderStrengths();renderPrices()}}}catch(error){state.inventoryLoaded=true;console.warn("Inventory check failed",error)}}
 fetch(`/Wholesale/catalog-data.json?updated=${Date.now()}`,{cache:"no-store"}).then(response=>{if(!response.ok)throw new Error("Catalog unavailable");return response.json()}).then(products=>{state.products=products.filter(visibleRetailProduct);state.catalogLoaded=true;refreshShoppingCategories();renderCatalog()}).catch(()=>{catalogGroups.innerHTML='<div class="prompt"><strong>Catalog unavailable.</strong><span>Please refresh the page.</span></div>'});refreshInventory();setInterval(refreshInventory,300000);renderCart();
 document.addEventListener("coa-data-updated",()=>{renderCatalog();if(state.selectedProduct)renderPrices()});
-
