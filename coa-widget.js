@@ -1,9 +1,23 @@
 (() => {
   const SOURCE = location.pathname.toLowerCase().includes("/tplprice/") ? "coa-data.json" : "https://raw.githubusercontent.com/ThatPepLab/TPLPrice/main/coa-data.json?updated=" + Date.now();
   let snapshot = { completed: [], pending: [], updatedAt: null };
-  // Internal rule: uploaded COAs represent the current on-hand Retail lot and remain authoritative until replaced.
-  // Vendor COAs remain the fallback evidence for products/strengths without an uploaded on-hand COA.
+  // Retail rule: only the explicitly designated current COA for a product/strength is public.
+  // These records remain authoritative until the user explicitly replaces them with a newer designated COA.
   const STATIC_ON_HAND_COAS = [
+    {
+      sourceType: "current-lot",
+      vendor: "THAT PEP LAB",
+      product: "GLP-3RT",
+      strength: "10mg",
+      analysisDate: "2026-10-12",
+      sampleReceived: "2026-10-09",
+      lab: "Bioviridian",
+      purity: "99.85%",
+      netContent: "11.42 mg",
+      lot: "HY00650-1986R10 YELLOW",
+      verificationCode: "COA10814",
+      reportUrl: "https://bioviridians.com/coa-search.html"
+    },
     {
       sourceType: "current-lot",
       vendor: "TPL",
@@ -55,19 +69,11 @@
   const prettyDate = (value) => { const date = new Date(String(value || "")); return Number.isNaN(date.getTime()) ? String(value || "Date not listed") : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date); };
   const matches = (product, strength) => {
     const productId = productKey(product), strengthId = strengthKey(strength);
-    const onHand = STATIC_ON_HAND_COAS.filter((record) => productKey(record.product) === productId && strengthKey(record.strength) === strengthId);
-    if (onHand.length) {
-      return {
-        completed: onHand.sort((a, b) => dateValue(b.analysisDate) - dateValue(a.analysisDate)),
-        pending: [],
-        source: "current-lot"
-      };
-    }
-    const accepts = (record) => approvedVendor(record.vendor) && productKey(record.product) === productId && strengthKey(record.strength) === strengthId;
+    const designated = STATIC_ON_HAND_COAS.filter((record) => productKey(record.product) === productId && strengthKey(record.strength) === strengthId);
     return {
-      completed: (snapshot.completed || []).filter(accepts).sort((a, b) => dateValue(b.analysisDate) - dateValue(a.analysisDate)),
-      pending: (snapshot.pending || []).filter(accepts).sort((a, b) => dateValue(b.dateSent) - dateValue(a.dateSent)),
-      source: "vendor"
+      completed: designated.sort((a, b) => dateValue(b.analysisDate) - dateValue(a.analysisDate)),
+      pending: [],
+      source: designated.length ? "current-lot" : "none"
     };
   };
   const markup = (product, strength, vendor) => {
