@@ -197,3 +197,16 @@
 
 /* Weight Loss is always the first visual category card. */
 .catalog-group-visible.weight-loss-first{order:-1000}
+
+/* Read-only four-week dose reference; no selectable dose controls. */
+.dose-guide{padding:14px 16px}
+.dose-guide h3{margin:0 0 10px;color:var(--navy);font-size:14px}
+.dose-guide .protocol-dose-list{display:grid;gap:7px}
+.dose-guide-item{display:grid;grid-template-columns:14px minmax(0,1fr);gap:7px;align-items:start;padding:7px 0;border-bottom:1px solid var(--line)}
+.dose-guide-item:last-child{border-bottom:0}
+.dose-guide-bullet{color:var(--orange);font-size:20px;font-weight:950;line-height:.8}
+.dose-guide-item strong,.dose-guide-item small,.dose-guide-item em{display:block}
+.dose-guide-item strong{color:var(--navy);font-size:12px}
+.dose-guide-item small{margin-top:2px;color:var(--muted);font-size:11px}
+.dose-guide-item em{margin-top:2px;color:var(--orange);font-size:9px;font-style:normal;font-weight:900;letter-spacing:.03em}
+.dose-guide .protocol-dose-note{margin-top:9px}
