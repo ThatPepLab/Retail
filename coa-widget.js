@@ -72,14 +72,11 @@
   };
   const markup = (product, strength, vendor) => {
     const result = matches(product, strength);
-    if (!result.completed.length && !result.pending.length) return "";
+    if (!result.completed.length) return "";
     const attrs = ' data-coa-product="' + esc(product) + '" data-coa-strength="' + esc(strength) + '"';
-    if (result.completed.length) {
-      const newerPending = result.pending.some((pending) => dateValue(pending.dateSent) > dateValue(result.completed[0].analysisDate));
-      const label = "Latest COA · " + prettyDate(result.completed[0].analysisDate);
-      return '<button type="button" class="coa-status coa-complete"' + attrs + ">" + esc(label) + (newerPending ? "<span>Newer test pending</span>" : "") + "</button>";
-    }
-    return '<button type="button" class="coa-status coa-pending"' + attrs + ">COA Pending</button>";
+    const newerPending = result.pending.some((pending) => dateValue(pending.dateSent) > dateValue(result.completed[0].analysisDate));
+    const label = "Latest COA · " + prettyDate(result.completed[0].analysisDate);
+    return '<button type="button" class="coa-status coa-complete"' + attrs + ">" + esc(label) + (newerPending ? "<span>Newer test pending</span>" : "") + "</button>";
   };
   function ensureModal() {
     if (document.querySelector("#coa-directory-modal")) return;
@@ -91,11 +88,24 @@
     const modal = document.querySelector("#coa-directory-modal");
     document.querySelector("#coa-modal-title").textContent = product + " · " + strength;
     const completeCards = result.completed.slice(0, 1).map((record) => {
+      const meaningful = (value) => {
+        const text=String(value||"").trim();
+        return text && !/^(?:not reported|not listed|n\/?a|unknown)$/i.test(text) ? text : "";
+      };
       const reportLabel = record.verificationCode ? "Verify COA" : "Open Official COA";
-      const report = record.reportUrl ? '<a class="coa-report-link" href="' + esc(record.reportUrl) + '" target="_blank" rel="noopener noreferrer">' + reportLabel + '</a>' : '<span class="coa-unavailable">Verification link not listed</span>';
+      const report = record.reportUrl ? '<a class="coa-report-link" href="' + esc(record.reportUrl) + '" target="_blank" rel="noopener noreferrer">' + reportLabel + '</a>' : "";
       const preview = record.previewUrl ? '<details class="coa-report-preview"><summary>Preview report</summary><iframe title="COA preview" src="' + esc(record.previewUrl) + '" loading="lazy"></iframe></details>' : "";
-      const lotDetails = (record.lot || record.verificationCode) ? '<dl><div><dt>Lot</dt><dd>' + esc(record.lot || "Not listed") + '</dd></div><div><dt>Verification</dt><dd>' + esc(record.verificationCode || "Not listed") + '</dd></div><div><dt>Sample received</dt><dd>' + esc(record.sampleReceived ? prettyDate(record.sampleReceived) : "Not listed") + '</dd></div></dl>' : "";
-      return '<article class="coa-record"><div class="coa-record-heading"><strong>' + "Latest COA" + "</strong><span>Completed " + esc(prettyDate(record.analysisDate)) + "</span></div><dl><div><dt>Testing lab</dt><dd>" + esc(record.lab || "Not listed") + "</dd></div><div><dt>Purity</dt><dd>" + esc(record.purity || "Not listed") + "</dd></div><div><dt>Net content</dt><dd>" + esc(record.netContent || "Not listed") + "</dd></div></dl>" + lotDetails + report + preview + "</article>";
+      const primaryDetails=[
+        ["Testing lab",meaningful(record.lab)],
+        ["Purity",meaningful(record.purity)],
+        ["Net content",meaningful(record.netContent)]
+      ].filter(([,value])=>value).map(([label,value])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join("");
+      const secondaryDetails=[
+        ["Lot",meaningful(record.lot)],
+        ["Verification",meaningful(record.verificationCode)],
+        ["Sample received",meaningful(record.sampleReceived)?prettyDate(record.sampleReceived):""]
+      ].filter(([,value])=>value).map(([label,value])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join("");
+      return '<article class="coa-record"><div class="coa-record-heading"><strong>Latest COA</strong><span>Completed ' + esc(prettyDate(record.analysisDate)) + '</span></div>' + (primaryDetails?'<dl>'+primaryDetails+'</dl>':"") + (secondaryDetails?'<dl>'+secondaryDetails+'</dl>':"") + report + preview + '</article>';
     }).join("");
     const latestCompletedDate = result.completed.length ? dateValue(result.completed[0].analysisDate) : 0;
     const pendingToShow = result.pending.filter((record) => !result.completed.length || dateValue(record.dateSent) > latestCompletedDate).slice(0, 1);
