@@ -39,9 +39,9 @@ const CART_QR={supplies:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAM0AAADNA
 const CART_QR_URLS={supplies:"https://thatpeplab.github.io/Supplies/",reorder:"https://thatpeplab.github.io/Retail/"};
 const isBacWater=name=>/^bac water$/i.test(String(name||"").trim());
 const categories=[
+  {name:"Weight Loss",test:/semaglutide|tirzepatide|trizepatide|glp-?3rt|cagrilintide|cagilintide|mazdutide|survodutide|eloralintide|adipotide|aod-?9604|hgh fragment|lemon bottle|lipo lab|lipo-[bc]|lipo-c|fat blaster|5-amino/i},
   {name:"Oil Based",test:OIL_BASED_PRODUCT_PATTERN},
   {name:"Tablets",test:TABLET_PRODUCT_PATTERN},
-  {name:"Weight Loss",test:/semaglutide|tirzepatide|trizepatide|glp-?3rt|cagrilintide|cagilintide|mazdutide|survodutide|eloralintide|adipotide|aod-?9604|hgh fragment|lemon bottle|lipo lab|lipo-[bc]|lipo-c|fat blaster|5-amino/i},
   {name:"Energy & Metabolic",test:/mots|ss-?31|nad\+|aicar|slu-?pp|l-carnitine|lc120|lc216|mic\b|superhuman|humanin|vitamin b12/i},
   {name:"Recovery & Repair",test:/bpc|tb500|tb-?500|glow|klow|kpv|ll-?37|ara-?290|cartalax|bronchogen|cardiogen|vesugen|lysine-proline-valine/i},
   {name:"Growth & Performance",test:/hgh|cjc|ghrp|ipamorelin|tesamorelin|sermorelin|igf|mgf|follistatin|ace-?031|gdf-?8|mk677|epo\b/i},
@@ -96,6 +96,13 @@ function productAvailableInShoppingMode(product){return isCuratedBestseller(prod
 function shoppingProducts(){return state.products.filter(productAvailableInShoppingMode)}
 function matchingProducts(){const query=search.value.trim().toLowerCase();return query?shoppingProducts().filter(product=>product.name.toLowerCase().includes(query)||displayProductName(product.name).toLowerCase().includes(query)).slice(0,12):[]}
 function stockChip(product){return productInStock(product)?'<span class="stock-chip">IN STOCK</span>':""}
+function productHasAvailable(product){return carriedStrengths(product).some(strength=>retailAvailability(product.name,strength).state==="available")}
+function productAvailabilityRank(product){return productHasAvailable(product)?0:1}
+function categoryHasAvailable(name,groups){return (groups.get(name)||[]).some(productHasAvailable)}
+function categoryAvailabilityRank(name,groups){
+  if(name==="Weight Loss")return-1;
+  return categoryHasAvailable(name,groups)?0:1;
+}
 const catalogUseDescriptions=[
   [/pt-?141/i,"Commonly known as an arousal peptide and discussed for sexual interest and response."],
   [/alprostadil/i,"Commonly discussed for supporting erectile response and sexual function."],
@@ -192,9 +199,11 @@ function refreshShoppingCategories(){const previous=categorySelect.value,names=r
 function renderCatalog(){
   const selected=categorySelect.value,groups=new Map();
   shoppingProducts().forEach(product=>{const category=categoryFor(product.name);if(!groups.has(category))groups.set(category,[]);groups.get(category).push(product)});
-  const ordered=retailCategoryNames().filter(name=>selected==="all"||name===selected);
+  const ordered=retailCategoryNames()
+    .filter(name=>selected==="all"||name===selected)
+    .sort((a,b)=>categoryAvailabilityRank(a,groups)-categoryAvailabilityRank(b,groups)||retailCategoryNames().indexOf(a)-retailCategoryNames().indexOf(b));
   catalogGroups.innerHTML=ordered.map(name=>{
-    const products=(groups.get(name)||[]).sort((a,b)=>displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));
+    const products=(groups.get(name)||[]).sort((a,b)=>productAvailabilityRank(a)-productAvailabilityRank(b)||displayProductName(a.name).localeCompare(displayProductName(b.name),undefined,{numeric:true}));
     const body=products.length?`<div class="product-buttons">${products.map(catalogCard).join("")}</div>`:`<div class="catalog-empty-category"><strong>No featured item in this category right now.</strong><span>Looking for something specific?</span><button type="button" data-go-request>Request a peptide or strength</button></div>`;
     return`<section class="catalog-group catalog-group-visible" aria-labelledby="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}"><div class="catalog-category-heading"><span class="category-icon" aria-hidden="true">◇</span><span class="category-copy"><strong id="category-${escapeHtml(name).replace(/[^a-z0-9]+/gi,"-").toLowerCase()}">${escapeHtml(name)}</strong><small>${products.length?products.length+" featured product"+(products.length===1?"":"s"):"Request available"}</small></span></div>${body}</section>`;
   }).join("");
