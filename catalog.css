@@ -146,3 +146,13 @@
 .unavailable-stock-copy{display:grid;gap:5px;color:var(--muted);font-size:13px}
 .unavailable-stock-copy strong{color:var(--navy);font-size:16px}
 .request-strength-button{margin-top:2px}
+
+/* Categories are always expanded so products are visible without an extra click. */
+.catalog-groups{grid-template-columns:1fr;gap:18px}
+.catalog-group-visible{grid-column:1/-1;overflow:hidden;border:2px solid #8190a5;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(16,45,89,.10)}
+.catalog-category-heading{display:grid;grid-template-columns:22px minmax(0,1fr);column-gap:10px;align-items:center;padding:15px 18px;border-bottom:3px solid var(--orange);background:var(--navy);color:#fff}
+.catalog-category-heading .category-copy{gap:3px}
+.catalog-category-heading .category-copy strong{font-size:20px;line-height:1.15}
+.catalog-category-heading .category-copy small{color:#dce6f3;font-size:12px;font-weight:750}
+.catalog-group-visible .product-buttons{padding:14px}
+@media(max-width:540px){.catalog-category-heading{padding:13px 14px}.catalog-category-heading .category-copy strong{font-size:18px}}
